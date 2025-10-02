@@ -1,0 +1,102 @@
+---
+title: "Ambient air quality, WHO--  EDA"
+output: html_document
+date: "2025-10-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+
+some things could explore-
+
+- which cities have highest average AQI
+- avaerage level of year pollutant per year
+-city /  country with cleanest air on average - could look at general trend here, are they more/less developed?- this knowledge of the countries would this be considered expert knowledge
+
+
+looking at population specifically.
+how does air quality change as population increases,are different pollutant different in different pop sizes.
+
+
+lets look at the dataset and clean the data set for each column: pm10_concentration, pm25_concentration, no2_concentration, population.
+```{r}
+dataset<- who_data
+dataset
+
+dataset[dataset == "NA"] <- NA
+
+
+clean_data_pm10 <- dataset[!is.na(dataset$pm10_concentration), ]
+clean_data_pm25 <- dataset[!is.na(dataset$pm25_concentration), ]
+clean_data_no2 <- dataset[!is.na(dataset$no2_concentration), ]
+clean_data_pop <- dataset[!is.na(dataset$population), ]
+
+clean_data_all <- dataset[
+  !is.na(dataset$population) &
+  !is.na(dataset$no2_concentration) &
+  !is.na(dataset$pm25_concentration) &
+  !is.na(dataset$pm10_concentration),
+]
+clean_data_pm10 <- clean_data_pm10 %>%
+  mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
+                as.numeric))
+clean_data_pm25 <- clean_data_pm25 %>%
+  mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
+                as.numeric))
+
+
+clean_data_no2 <- clean_data_no2 %>%
+  mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
+                as.numeric))
+
+clean_data_pop <- clean_data_pop %>%
+  mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
+                as.numeric))
+clean_data_all <- clean_data_all %>%
+  mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
+                as.numeric))
+
+```
+
+ lets calculate some average values of columns
+ 
+```{r}
+mean(clean_data_pm10$pm10_concentration)
+mean(clean_data_pm25$pm25_concentration)
+mean(clean_data_no2$no2_concentration)
+mean(clean_data_pop$population)
+```
+
+
+```{r}
+
+
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
