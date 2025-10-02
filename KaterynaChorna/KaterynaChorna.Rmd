@@ -1,1 +1,112 @@
+# Requirements
+
+The following solution checks for the requirements, and then installs them if they are not present.
+
+```{r}
+# --- 0. Install and load libraries ---
+if(!require("gplots")) install.packages("gplots")
+if(!require("readr")) install.packages("readr")
+if(!require("readxl")) install.packages("readxl")
+if(!require("dplyr")) install.packages("dplyr")
+if(!require("ggplot2")) install.packages("ggplot2")
+
+library(gplots)
+library(readr)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+
+```
+
+
+
+```{r}
+# read sheet 3 of the Excel file
+
+getwd()
+data <- read_excel("../data/who_air_quality_2024.xlsx", sheet = 3)
+```
+
+# Correlation between PM2.5, PM10, and NO₂
+```{r}
+
+#Replace literal "NA" strings with proper R NA ---
+data[data == "NA"] <- NA
+
+#convert numeric-like columns stored as character to numeric ---
+num_cols <- c("pm10_concentration","pm25_concentration","no2_concentration",
+              "pm10_tempcov","pm25_tempcov","no2_tempcov","population")
+
+data[num_cols] <- lapply(data[num_cols], as.numeric)
+
+corr_matrix <- cor(data[, c("pm25_concentration","pm10_concentration","no2_concentration")],
+                   use="complete.obs")
+corr_matrix
+
+```
+PM2.5 and PM10 are strongly positively correlated (0.91). So, cities with higher PM10 usually also have higher PM2.5
+
+
+```{r}
+
+
+# Base R scatterplot matrix
+pairs(data[, c("pm25_concentration","pm10_concentration","no2_concentration")],
+      main="Pollutant Correlations")
+```
+
+
+
+
+## Temporal Coverage of Pollutants
+
+We check how complete the annual monitoring is for each pollutant.
+
+```{r}
+
+# Summary stats
+summary(data[, c("pm25_tempcov","pm10_tempcov","no2_tempcov")], na.rm = TRUE)
+
+
+# Filter cities with at least 75% coverage
+data_highcov <- subset(data,
+                        pm25_tempcov >= 75 & 
+                        pm10_tempcov >= 75 & 
+                        no2_tempcov >= 75)
+
+nrow(data_highcov)  # number of cities remaining
+
+# Correlation matrix for high-coverage cities
+corr_matrix_highcov <- cor(data_highcov[, c("pm25_concentration",
+                                            "pm10_concentration",
+                                            "no2_concentration")],
+                           use = "complete.obs")
+corr_matrix_highcov
+
+# Scatterplot matrix for high-coverage cities
+pairs(data_highcov[, c("pm25_concentration","pm10_concentration","no2_concentration")],
+      main="Pollutant Correlations (High-Coverage Cities)")
+
+```
+After restricting to cities with at least 75% annual coverage, PM2.5 and PM10 remain strongly positively correlated (r ≈ 0.82). Correlations with NO₂ are moderate (~0.43). The slight reduction in correlation reflects the removal of extreme values, making these estimates more reliable.
+
+
+# PM2.5 (Test)
+
+We explore PM2.5 concentrations across cities and regions, highlighting distributions, outliers, and regional differences.
+
+```{r}
+boxplot(pm25_concentration ~ who_region, data=data, main="PM2.5 by Region", ylab="µg/m³")
+hist(log1p(data$pm25_concentration), breaks=30, main="Log PM2.5 Distribution", xlab="log(1 + PM2.5)")
+
+boxplot(data$pm25_concentration, main="PM2.5 Distribution", ylab="µg/m³")
+
+boxplot(log1p(data$pm25_concentration), main="PM2.5 Distribution (log scale)", ylab="log(1 + PM2.5)")
+
+q85 <- quantile(data$pm25_concentration, 0.85, na.rm = TRUE)
+boxplot(data$pm25_concentration[data$pm25_concentration < q85],
+        main="PM2.5 Distribution (85th percentile)", ylab="µg/m³")
+
+
+```
 
