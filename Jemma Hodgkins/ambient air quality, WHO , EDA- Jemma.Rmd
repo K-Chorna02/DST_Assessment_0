@@ -72,6 +72,7 @@ mean(clean_data_pm10$pm10_concentration)
 mean(clean_data_pm25$pm25_concentration)
 mean(clean_data_no2$no2_concentration)
 mean(clean_data_pop$population)
+
 ```
 
 
