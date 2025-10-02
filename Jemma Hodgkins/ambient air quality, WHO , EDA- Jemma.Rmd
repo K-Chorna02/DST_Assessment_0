@@ -21,8 +21,8 @@ some things could explore-
 -city /  country with cleanest air on average - could look at general trend here, are they more/less developed?- this knowledge of the countries would this be considered expert knowledge
 
 
-looking at population specifically.
-how does air quality change as population increases,are different pollutant different in different pop sizes.
+looking at population specifically:
+how does air quality change as population increases,are different pollutants different in different pop sizes.
 
 
 lets look at the dataset and clean the data set for each column: pm10_concentration, pm25_concentration, no2_concentration, population.
@@ -65,7 +65,7 @@ clean_data_all <- clean_data_all %>%
 
 ```
 
- lets calculate some average values of columns
+lets calculate some average values of columns
  
 ```{r}
 mean(clean_data_pm10$pm10_concentration)
@@ -73,28 +73,102 @@ mean(clean_data_pm25$pm25_concentration)
 mean(clean_data_no2$no2_concentration)
 mean(clean_data_pop$population)
 
+
+#see how the averages change when we use the cleaned data for all the columns- so here we have much less data.
+mean(clean_data_all$pm10_concentration)
+mean(clean_data_all$pm25_concentration)
+mean(clean_data_all$no2_concentration)
+mean(clean_data_all$population)
+```
+
+
+for the first bit of analysis lets use the fully cleaned data.
+```{r}
+ggplot(data=clean_data_all, aes(x = population, y = pm10_concentration)) + geom_point()
+ggplot(data=clean_data_all, aes(x = population, y = pm25_concentration)) + geom_point()
+ggplot(data =clean_data_all, aes(x = population, y = no2_concentration)) + geom_point()
+```
+lets take a look at just the data in the USA to understand some of the trends
+
+
+```{r}
+clean_data_all_USA <- clean_data_all %>% filter(iso3 == 'USA', year == '2021' )
+clean_data_all_USA
+
+ggplot(data=clean_data_all_USA, aes(x = population, y = pm10_concentration)) + geom_point()
+ggplot(data=clean_data_all_USA, aes(x = population, y = pm25_concentration)) + geom_point()
+ggplot(data =clean_data_all_USA, aes(x = population, y = no2_concentration)) + geom_point()
+
 ```
 
 
 ```{r}
 
 
+
+clean_data_all_2021 <- clean_data_all %>% filter(year == '2021')
+ggplot(clean_data_all_2021, aes(x = population, y= pm10_concentration)) + geom_point()
+
+ggplot(clean_data_all_2021, aes(x = population, y= pm10_concentration)) + geom_point() + scale_x_log10()
+```
+
+not really seeing a trend here.
+
+```{r}
+
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+# Get world map polygons
+world <- ne_countries(scale = "medium", returnclass = "sf")
+map_data_2021 <- world %>%
+  left_join(clean_data_all_2021, by = c("iso_a3" = "iso3"))
+
+
+ggplot(data = map_data_2021) +
+  geom_sf(aes(fill = pm10_concentration)) +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  theme_minimal() +
+  labs(fill = "PM10 (µg/m³)",
+       title = "Global PM10 Concentration by Country (2021)")
+
+ggplot(data = map_data_2021) +
+  geom_sf(aes(fill = pm25_concentration)) +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  theme_minimal() +
+  labs(fill = "PM25 (µg/m³)",
+       title = "Global PM25 Concentration by Country (2021)")
+
+
+
 ```
 
 
 ```{r}
-```
+
+clean_data_all_2019 <- clean_data_all %>% filter(year == '2019')
+
+map_data_2019 <- world %>%
+  left_join(clean_data_all_2019, by = c("iso_a3" = "iso3"))
 
 
-```{r}
-```
+ggplot(data = map_data_2019) +
+  geom_sf(aes(fill = pm10_concentration)) +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  theme_minimal() +
+  labs(fill = "PM10 (µg/m³)",
+       title = "Global PM10 Concentration by Country (2019)")
+
+ggplot(data = map_data_2019) +
+  geom_sf(aes(fill = pm25_concentration)) +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  theme_minimal() +
+  labs(fill = "PM25 (µg/m³)",
+       title = "Global PM25 Concentration by Country (2019)")
 
 
-```{r}
-```
 
-
-```{r}
 ```
 
 
