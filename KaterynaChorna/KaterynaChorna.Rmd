@@ -1,10 +1,11 @@
-# Overview 
+# Overview
+
 Using global city air quality data from WHO, in this report I:
 
-- Explore correlations between PM2.5, PM10, and NO₂.  
-- Investigate how data coverage affects these correlations.  
-- Explore trends in pollutant levels over time.
-- Investigate how data coverage affects these trends.
+-   Explore correlations between PM2.5, PM10, and NO₂.\
+-   Investigate how data coverage affects these correlations.\
+-   Explore trends in pollutant levels over time.
+-   Investigate how data coverage affects these trends.
 
 ## Requirements
 
@@ -17,12 +18,14 @@ if(!require("readr")) install.packages("readr")
 if(!require("readxl")) install.packages("readxl")
 if(!require("dplyr")) install.packages("dplyr")
 if(!require("ggplot2")) install.packages("ggplot2")
+if(!require("kableExtra")) install.packages("kableExtra")
 
 library(gplots)
 library(readr)
 library(readxl)
 library(dplyr)
 library(ggplot2)
+library(kableExtra)
 
 ```
 
@@ -126,8 +129,8 @@ ggplot(trend_data, aes(x = as.integer(year))) +
 
 We get some warnings when plotting because a few rows have missing or invalid values for the year or pollutant. There are also noticeable spikes in PM10 for certain years, due to missing data and outliers. For example, some years might have only a few days recorded or only some pollutants measured.
 
-
 To get a clearer picture, we focus on rows where all three pollutants are recorded. This removes missing values and lets us calculate yearly averages more reliably. Comparing this complete data subset with the full dataset shows whether the overall trends are consistent or affected by missing data.
+
 ```{r}
 # Trends Over Time (Complete Data )
 
@@ -154,9 +157,8 @@ ggplot(trend_data_complete, aes(x = as.integer(year))) +
 
 
 ```
+
 Now all concentrations are between 10 and 35, so the range is smaller. In this filtered data, PM10 is always the highest, followed by NO₂, and then PM2.5. This ordering is clearer because extreme values and missing data have been removed.
-
-
 
 ```{r}
 # Total rows
@@ -177,6 +179,7 @@ n_highcov_complete <- nrow(data_highcov_complete)
 n_highcov_complete
 
 ```
+
 We can also remove low-coverage data, keeping only cities with at least 75% annual coverage,but reduces the dataset from 40,098 rows to 7,563.
 
 ```{r}
@@ -200,18 +203,51 @@ ggplot(trend_highcov_complete, aes(x = as.integer(year))) +
   theme_minimal()
 
 ```
+
 However, for 2010–2013 the pollution shows noticeable spikes, so we need to check how much data we actually have for those years. Filtering for high coverage makes the trends less reliable there. After 2013 the trends are smoother, and we can clearly see that PM10 is always the highest, followed by NO₂, then PM2.5, with all pollutants generally decreasing
 
 ```{r}
-data_highcov_complete %>%
+summary_table <- data_highcov_complete %>%
   group_by(year) %>%
   summarise(n = n(),
             mean_pm25 = mean(pm25_concentration, na.rm = TRUE),
             mean_pm10 = mean(pm10_concentration, na.rm = TRUE),
             mean_no2  = mean(no2_concentration, na.rm = TRUE)) %>%
   arrange(year)
+kable(summary_table,
+      digits = 2, 
+      col.names = c("Year", "Observations", "PM2.5 (µg/m³)", "PM10 (µg/m³)", "NO2 (µg/m³)"),
+      caption = "") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
 
 ```
-For years like 2011 and 2012, there are only 1–2 records available. This makes the average concentrations for those years highly unreliable and highlights a limitation of this dataset.
 
+For years 2011 and 2012, there are only 1–2 records available. This makes the average concentrations for those years highly unreliable.
 
+# Coverage by region
+
+Now we look at how data coverage is spread across regions. This shows where the high-coverage data comes from, where coverage is low, and where it’s missing. It also helps us see which regions are well represented and which aren’t, so we know the limits of what we can analyse.
+
+```{r}
+# Classify each city by coverage
+data <- data %>%
+  mutate(coverage_category = case_when(
+    is.na(pm25_tempcov) & is.na(pm10_tempcov) & is.na(no2_tempcov) ~ "NA",
+    pm25_tempcov >= 75 & pm10_tempcov >= 75 & no2_tempcov >= 75 ~ "High",
+    TRUE ~ "Low"
+  ))
+
+# Summarise by region
+coverage_by_region <- data %>%
+  group_by(who_region, coverage_category) %>%
+  summarise(n_cities = n_distinct(city), .groups = "drop")
+
+# Plot stacked bar chart
+ggplot(coverage_by_region, aes(x = who_region, y = n_cities, fill = coverage_category)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Air Quality Data Coverage by Region",
+       x = "Region", y = "Number of Cities", fill = "Coverage") +
+  theme_minimal()
+```
+
+Most high-coverage cities are in Europe, with some in Southeast Asia and North America. This means the trends from high-coverage data mainly reflect European cities and aren’t representative of global air quality. Regions like Africa and the Eastern Mediterranean have very little data, so we can’t draw any conclusions there.
