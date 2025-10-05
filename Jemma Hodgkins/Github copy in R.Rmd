@@ -1,0 +1,242 @@
+---
+title: "Github copy in R"
+output: html_document
+date: "2025-10-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+
+
+
+```{r}
+dataset<- who_data
+```
+
+
+using code from EDA-FOR-AIR-QUALITY-INDEX/pythonproject.py and changing it into R code we have:
+
+
+```{r}
+# Load required libraries
+library(tidyverse)
+
+# Read CSV file
+
+
+df <- dataset
+# View structure and summary
+glimpse(df)
+summary(df)
+
+df <- df %>%
+  mutate(across(c(pm25_concentration, pm10_concentration, no2_concentration,
+                  pm10_tempcov, pm25_tempcov, no2_tempcov,
+                  population, latitude, longitude), 
+                ~as.numeric(.)))
+
+# Define numeric and non-numeric columns
+numeric_cols <- c(
+  'year', 'pm10_concentration', 'pm25_concentration', 'no2_concentration',
+  'pm10_tempcov', 'pm25_tempcov', 'no2_tempcov', 'population',
+  'latitude', 'longitude'
+)
+
+non_numeric_cols <- c('who_region', 'iso3', 'country_name', 'city', 'type_of_stations')
+
+# Replace NA in numeric columns with mean
+df <- df %>%
+  mutate(across(all_of(numeric_cols), ~ ifelse(is.na(.x), mean(.x, na.rm = TRUE), .x)))
+
+# Replace NA in non-numeric columns with mode
+get_mode <- function(x) {
+  ux <- na.omit(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+df <- df %>%
+  mutate(across(all_of(non_numeric_cols), ~ ifelse(is.na(.x), get_mode(.x), .x)))
+
+# Count missing values
+colSums(is.na(df))
+
+# Count unique values for categorical columns
+df %>%
+  select(where(is.character)) %>%
+  summarise(across(everything(), n_distinct))
+
+# View column names
+names(df)
+
+#-----------------------------
+# Pollution trends for a specific country (India)
+#-----------------------------
+
+country_filter <- "India"
+
+country_trends <- df %>%
+  filter(country_name == country_filter) %>%
+  group_by(year) %>%
+  summarise(
+    `PM2.5` = mean(pm25_concentration, na.rm = TRUE),
+    PM10 = mean(pm10_concentration, na.rm = TRUE),
+    `NO₂` = mean(no2_concentration, na.rm = TRUE)
+  ) %>%
+  pivot_longer(cols = c(`PM2.5`, PM10, `NO₂`), names_to = "Pollutant", values_to = "Concentration")
+
+ggplot(country_trends, aes(x = year, y = Concentration, color = Pollutant)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = paste("Pollution Trends in", country_filter),
+    x = "Year", y = "Average Concentration (µg/m³)"
+  ) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#-----------------------------
+# Top 10 polluted cities (PM2.5) in 2020
+#-----------------------------
+
+year_filter <- 2020
+
+top_cities <- df %>%
+  filter(year == year_filter, country_name == country_filter) %>%
+  select(city, pm25_concentration) %>%
+  drop_na() %>%
+  arrange(desc(pm25_concentration)) %>%
+  head(10)
+
+ggplot(top_cities, aes(x = pm25_concentration, y = reorder(city, pm25_concentration))) +
+  geom_col(fill = "steelblue") +
+  labs(
+    title = paste("Top 10 Most Polluted Cities in", country_filter, "(PM2.5) -", year_filter),
+    x = "PM2.5 Concentration (µg/m³)", y = "City"
+  ) +
+  theme_minimal()
+
+#-----------------------------
+# Average pollutant concentration by WHO region
+#-----------------------------
+
+region_avg <- df %>%
+  group_by(who_region) %>%
+  summarise(
+    pm10_concentration = mean(pm10_concentration, na.rm = TRUE),
+    pm25_concentration = mean(pm25_concentration, na.rm = TRUE),
+    no2_concentration = mean(no2_concentration, na.rm = TRUE)
+  ) %>%
+  pivot_longer(cols = -who_region, names_to = "Pollutant", values_to = "Average_Concentration")
+
+ggplot(region_avg, aes(x = who_region, y = Average_Concentration, fill = Pollutant)) +
+  geom_col(position = "dodge") +
+  labs(title = "Average Pollutant Concentration by WHO Region", x = "WHO Region", y = "Average Concentration") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#-----------------------------
+# PM2.5 trends: India vs Global average
+#-----------------------------
+
+avg_india <- df %>%
+  filter(country_name == "India") %>%
+  group_by(year) %>%
+  summarise(PM2.5 = mean(pm25_concentration, na.rm = TRUE))
+
+avg_global <- df %>%
+  group_by(year) %>%
+  summarise(PM2.5 = mean(pm25_concentration, na.rm = TRUE))
+
+ggplot() +
+  geom_line(data = avg_india, aes(x = year, y = PM2.5, color = "India"), size = 1.2) +
+  geom_line(data = avg_global, aes(x = year, y = PM2.5, color = "Global Average"), size = 1.2) +
+  labs(title = "PM2.5 Trends Over Years: India vs Global", x = "Year", y = "PM2.5 (µg/m³)") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+#-----------------------------
+# Pollution composition pie chart for a specific city
+#-----------------------------
+
+city_name <- "Delhi/IND"
+
+city_data <- df %>%
+  filter(
+    country_name == "India",
+    str_to_lower(city) == str_to_lower(city_name),
+    year == year_filter
+  )
+
+values <- as.numeric(unlist(city_data[1, c("pm25_concentration", "pm10_concentration", "no2_concentration")]))
+values[is.na(values) | values <= 0] <- 0  # replace NAs or negatives with 0
+
+if (sum(values) > 0) {
+  pie(values, labels = c("PM2.5", "PM10", "NO₂"),
+      col = c("red", "orange", "purple"),
+      main = paste("Pollution Composition in", city_name, "-", year_filter))
+} else {
+  print(paste("No positive pollutant data available for", city_name, "in", year_filter))
+}
+
+# 
+# if (nrow(city_data) > 0) {
+#   values <- unlist(city_data[1, c("pm25_concentration", "pm10_concentration", "no2_concentration")])
+#   labels <- c("PM2.5", "PM10", "NO₂")
+#   
+#   pie(values, labels = labels, col = c("red", "orange", "purple"),
+#       main = paste("Pollution Composition in", city_name, "-", year_filter))
+# } else {
+#   print(paste("No data available for", city_name, "in", year_filter))
+# }
+
+#-----------------------------
+# Heatmap of top 20 countries by average pollutant levels
+#-----------------------------
+
+pivot_df <- df %>%
+  group_by(country_name) %>%
+  summarise(
+    pm25_concentration = mean(pm25_concentration, na.rm = TRUE),
+    pm10_concentration = mean(pm10_concentration, na.rm = TRUE),
+    no2_concentration = mean(no2_concentration, na.rm = TRUE)
+  ) %>%
+  drop_na() %>%
+  arrange(desc(pm25_concentration)) %>%
+  head(20) %>%
+  column_to_rownames("country_name")
+
+library(reshape2)
+library(ggcorrplot)
+
+melted <- melt(as.matrix(pivot_df))
+
+ggplot(melted, aes(x = Var2, y = Var1, fill = value)) +
+  geom_tile() +
+  geom_text(aes(label = round(value, 1))) +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(title = "Pollutant Concentration by Country (Top 20)", x = "Pollutant", y = "Country") +
+  theme_minimal()
+
+#-----------------------------
+# Correlation matrix heatmap
+#-----------------------------
+
+num_df <- df %>% select(where(is.numeric))
+corr_mat <- cor(num_df, use = "complete.obs")
+
+ggcorrplot(corr_mat, hc.order = TRUE, type = "lower",
+            lab = TRUE, lab_size = 2.5, title = "Correlation Matrix of Numeric Features",
+            ggtheme = theme_minimal())
+
+
+
+
+
+```
