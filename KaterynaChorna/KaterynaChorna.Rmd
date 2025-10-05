@@ -1,4 +1,12 @@
-# Requirements
+# Overview 
+Using global city air quality data from WHO, in this report I:
+
+- Explore correlations between PM2.5, PM10, and NO₂.  
+- Investigate how data coverage affects these correlations.  
+- Explore trends in pollutant levels over time.
+- Investigate how data coverage affects these trends.
+
+## Requirements
 
 The following solution checks for the requirements, and then installs them if they are not present.
 
@@ -18,8 +26,6 @@ library(ggplot2)
 
 ```
 
-
-
 ```{r}
 # read sheet 3 of the Excel file
 
@@ -27,9 +33,9 @@ getwd()
 data <- read_excel("../data/who_air_quality_2024.xlsx", sheet = 3)
 ```
 
-# Correlation between PM2.5, PM10, and NO₂
-```{r}
+We get a summary of the data. Some data should be numeric, but it's not read as numeric by R. So we convert some numeric-like columns stored as character to numeric.
 
+```{r}
 #Replace literal "NA" strings with proper R NA ---
 data[data == "NA"] <- NA
 
@@ -37,30 +43,30 @@ data[data == "NA"] <- NA
 num_cols <- c("pm10_concentration","pm25_concentration","no2_concentration",
               "pm10_tempcov","pm25_tempcov","no2_tempcov","population")
 
-data[num_cols] <- lapply(data[num_cols], as.numeric)
+data[num_cols] <- lapply(data[num_cols], as.numeric) # set the data as numeric
 
+summary(data)
+```
+
+# Correlation between PM2.5, PM10, and NO₂
+
+```{r}
 corr_matrix <- cor(data[, c("pm25_concentration","pm10_concentration","no2_concentration")],
                    use="complete.obs")
 corr_matrix
-
 ```
-PM2.5 and PM10 are strongly positively correlated (0.91). So, cities with higher PM10 usually also have higher PM2.5
-
 
 ```{r}
+```
 
+PM2.5 and PM10 are strongly positively correlated (0.91). So, cities with higher PM10 usually also have higher PM2.5
 
-# Base R scatterplot matrix
+```{r}
 pairs(data[, c("pm25_concentration","pm10_concentration","no2_concentration")],
       main="Pollutant Correlations")
 ```
 
-
-
-
-## Temporal Coverage of Pollutants
-
-We check how complete the annual monitoring is for each pollutant.
+We look at Temporal Coverage of Pollutants to check how complete the annual monitoring is for each pollutant.
 
 ```{r}
 
@@ -88,25 +94,124 @@ pairs(data_highcov[, c("pm25_concentration","pm10_concentration","no2_concentrat
       main="Pollutant Correlations (High-Coverage Cities)")
 
 ```
-After restricting to cities with at least 75% annual coverage, PM2.5 and PM10 remain strongly positively correlated (r ≈ 0.82). Correlations with NO₂ are moderate (~0.43). The slight reduction in correlation reflects the removal of extreme values, making these estimates more reliable.
 
+After restricting to cities with at least 75% annual coverage, PM2.5 and PM10 remain strongly positively correlated (r ≈ 0.82). Correlations with NO₂ are moderate (\~0.43). The slight reduction in correlation reflects the removal of extreme values, making these estimates more reliable.
 
-# PM2.5 (Test)
+# Trends Over Time
 
-We explore PM2.5 concentrations across cities and regions, highlighting distributions, outliers, and regional differences.
+We calculate the average concentration per year for PM2.5, PM10, and NO2 using all available data. This shows overall trends in air quality over time and lets us compare pollutants. Averages ignore missing values, so each year reflects the data that’s actually recorded.
 
 ```{r}
-boxplot(pm25_concentration ~ who_region, data=data, main="PM2.5 by Region", ylab="µg/m³")
-hist(log1p(data$pm25_concentration), breaks=30, main="Log PM2.5 Distribution", xlab="log(1 + PM2.5)")
+trend_data <- data %>%
+  group_by(year) %>%
+  summarise(mean_pm25 = mean(pm25_concentration, na.rm = TRUE),
+            mean_pm10 = mean(pm10_concentration, na.rm = TRUE),
+            mean_no2  = mean(no2_concentration, na.rm = TRUE))
 
-boxplot(data$pm25_concentration, main="PM2.5 Distribution", ylab="µg/m³")
-
-boxplot(log1p(data$pm25_concentration), main="PM2.5 Distribution (log scale)", ylab="log(1 + PM2.5)")
-
-q85 <- quantile(data$pm25_concentration, 0.85, na.rm = TRUE)
-boxplot(data$pm25_concentration[data$pm25_concentration < q85],
-        main="PM2.5 Distribution (85th percentile)", ylab="µg/m³")
+ggplot(trend_data, aes(x = as.integer(year))) +
+  geom_line(aes(y = mean_pm10, colour = "PM10"), size = 1) +
+  geom_line(aes(y = mean_no2,  colour = "NO2"), size = 1) +
+  geom_line(aes(y = mean_pm25, colour = "PM2.5"), size = 1) +
+  scale_colour_manual(values = c("PM10" = "blue",
+                                 "NO2"  = "green",
+                                 "PM2.5" = "red")) +
+  scale_x_continuous(breaks = unique(trend_data_complete$year)) +
+  labs(title = "Global Trends in Air Pollutant Levels Over Time",
+       y = "Average Concentration (µg/m³)", x = "Year",
+       colour = "Pollutant") +
+  theme_minimal()
 
 
 ```
+
+We get some warnings when plotting because a few rows have missing or invalid values for the year or pollutant. There are also noticeable spikes in PM10 for certain years, due to missing data and outliers. For example, some years might have only a few days recorded or only some pollutants measured.
+
+
+To get a clearer picture, we focus on rows where all three pollutants are recorded. This removes missing values and lets us calculate yearly averages more reliably. Comparing this complete data subset with the full dataset shows whether the overall trends are consistent or affected by missing data.
+```{r}
+# Trends Over Time (Complete Data )
+
+
+trend_data_complete <- data_complete %>%
+  group_by(year) %>%
+  summarise(mean_pm25 = mean(pm25_concentration, na.rm = TRUE),
+            mean_pm10 = mean(pm10_concentration, na.rm = TRUE),
+            mean_no2  = mean(no2_concentration, na.rm = TRUE))
+
+ggplot(trend_data_complete, aes(x = as.integer(year))) +
+  geom_line(aes(y = mean_pm10, colour = "PM10"), size = 1) +
+  geom_line(aes(y = mean_no2,  colour = "NO2"), size = 1) +
+  geom_line(aes(y = mean_pm25, colour = "PM2.5"), size = 1) +
+  scale_colour_manual(values = c("PM10" = "blue",
+                                 "NO2"  = "green",
+                                 "PM2.5" = "red")) +
+  scale_x_continuous(breaks = unique(trend_data_complete$year)) +
+  labs(title = "Global Trends in Air Pollutant Levels Over Time (Complete Data)",
+       y = "Average Concentration (µg/m³)", x = "Year",
+       colour = "Pollutant") +
+  theme_minimal()
+
+
+
+```
+Now all concentrations are between 10 and 35, so the range is smaller. In this filtered data, PM10 is always the highest, followed by NO₂, and then PM2.5. This ordering is clearer because extreme values and missing data have been removed.
+
+
+
+```{r}
+# Total rows
+n_all <- nrow(data)
+n_all
+
+# Complete data (all three pollutants recorded)
+data_complete <- data[complete.cases(data[, c("pm25_concentration","pm10_concentration","no2_concentration")]), ]
+n_complete <- nrow(data_complete)
+n_complete
+
+# Complete data + high coverage (≥75% for all pollutants)
+data_highcov_complete <- data_complete %>%
+  filter(!is.na(pm25_tempcov), !is.na(pm10_tempcov), !is.na(no2_tempcov),
+         pm25_tempcov >= 75, pm10_tempcov >= 75, no2_tempcov >= 75)
+
+n_highcov_complete <- nrow(data_highcov_complete)
+n_highcov_complete
+
+```
+We can also remove low-coverage data, keeping only cities with at least 75% annual coverage,but reduces the dataset from 40,098 rows to 7,563.
+
+```{r}
+trend_highcov_complete <- data_highcov_complete %>%
+  group_by(year) %>%
+  summarise(mean_pm25 = mean(pm25_concentration, na.rm = TRUE),
+            mean_pm10 = mean(pm10_concentration, na.rm = TRUE),
+            mean_no2  = mean(no2_concentration, na.rm = TRUE))
+
+ggplot(trend_highcov_complete, aes(x = as.integer(year))) +
+  geom_line(aes(y = mean_pm25, colour = "PM2.5"), size = 1) +
+  geom_line(aes(y = mean_pm10, colour = "PM10"), size = 1) +
+  geom_line(aes(y = mean_no2,  colour = "NO2"), size = 1) +
+  scale_colour_manual(values = c("PM2.5" = "red",
+                                 "PM10"  = "blue",
+                                 "NO2"   = "green")) +
+  scale_x_continuous(breaks = unique(trend_highcov_complete$year)) +
+  labs(title = "Global Trends in Air Pollutant Levels Over Time\n(Complete + High Coverage Data)",
+       y = "Average Concentration (µg/m³)", x = "Year",
+       colour = "Pollutant") +
+  theme_minimal()
+
+```
+However, for 2010–2013 the pollution shows noticeable spikes, so we need to check how much data we actually have for those years. Filtering for high coverage makes the trends less reliable there. After 2013 the trends are smoother, and we can clearly see that PM10 is always the highest, followed by NO₂, then PM2.5, with all pollutants generally decreasing
+
+```{r}
+data_highcov_complete %>%
+  group_by(year) %>%
+  summarise(n = n(),
+            mean_pm25 = mean(pm25_concentration, na.rm = TRUE),
+            mean_pm10 = mean(pm10_concentration, na.rm = TRUE),
+            mean_no2  = mean(no2_concentration, na.rm = TRUE)) %>%
+  arrange(year)
+
+```
+For years like 2011 and 2012, there are only 1–2 records available. This makes the average concentrations for those years highly unreliable and highlights a limitation of this dataset.
+
 
