@@ -33,6 +33,7 @@ dataset <- read_excel("who_data.xlsx")
 
 dataset
 
+
 dataset[dataset == "NA"] <- NA
 
 
