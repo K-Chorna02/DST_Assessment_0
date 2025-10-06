@@ -1,6 +1,3 @@
-
-
-
 ---
 title: "01-DataExploration- Air pollution modelling"
 output:
@@ -8,10 +5,10 @@ output:
   pdf_document: default
   github_document: default
 date: "2025-09-29"
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
-
-
-
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -31,61 +28,81 @@ air_data <- read.csv(here("data", "air_data.csv"), stringsAsFactors = FALSE)
 
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
 ```{r}
 # View(air_data)
 
-# head(air_data)
+#head(air_data)
 
 #str(air_data)
 
 ```
 
+# 1. Introduction
+
+In this exploratory analysis, we investigate **air pollution levels**
+across different cities, focusing on the three main pollutants:
+**PM_2.5**, **PM_10**, and **NO_2**.\
+Our goal is to identify key factors associated with air quality and test
+whether **population size**, **time trends**, and **regional** or
+**environmental factors** can help explain variation in pollution levels.
+
 ## Preforming linear regression
 
-3 types of Pollution, so we are going to model 3 types of Y:
-Y1 = pm25_concentration (particulate matter < 2.5µm)
-Y2 = pm10_concentration (particulate matter < 10µm)
-Y3 = no2_concentration (nitrogen dioxide)
+There are **Three types of Pollution** we are going to model,
+corresponding to three different types of response variables: 
 
-at each time.
+1. **Y_1 =
+pm25_concentration** (particulate matter \< 2.5µm), 
+2. **Y_2 =
+pm10_concentration** (particulate matter \< 10µm),
+3. **Y_3 =
+no2_concentration** (nitrogen dioxide).
 
-Looking at our dataset and what has already been analysed, some good candidates for covariates will could be:
-- population (city size) - numeric, continiuos 
-- year (to capture time effects) - numeric, discrete
-- type of stations (urban, suburan, rural) - categorical 
-- country - categorical (maybe by reigon)
+Looking at our dataset and what has already been analysed, some good
+candidates for **covariates** could be:
 
+1. **population** (city size)
+-numeric, continuous.
+2. **year** (to capture time effects) -
+numeric, discrete.
+3. **type of stations** (urban, suburban , rural) -
+categorical.
+4. **Country/region** - categorical ( possibly grouped by
+WHO region).
 
- Our issue is that we have multiple labels in one row, eg "urban,suburan, suburan", so R would treat each string as a seperate "level", creating hundreds of basically meaningless factor levels
+## Data Cleaning and Variable Preparation
 
+An issue with our dataset is that some observations have multiple labels
+in the same cell for **type_of_stations**, eg
+"urban,suburban, suburban". R would treat each string as a separate
+"level", creating hundreds of basically meaningless categories.
 
-to keep things manageable, let us start with:
+So to keep things manageable at this stage, let us begin with only these
+predictors:
 
-1. Population 
-2. Year 
+1.  Population,
+2.  Year.
 
-
-The general linear regression model can be written as:  
+The general linear regression model can be written as:
 
 $$
 Y_i = \beta_0 + \beta_1 \,\text{Population}_i + \beta_2 \,\text{Year}_i  + \varepsilon_i
 $$
 
-where $$\varepsilon_i \sim N(0, \sigma^2)$$ represents the error term.  
+where $$\varepsilon_i \sim N(0, \sigma^2)$$ represents the error term.
 
+## Preparing the data
 
-# before fitting we need make sure the data fits our categories, (eg, numeric, factors)
-# we will try and work with types_stations and region later so we will clean it now 
+Before fitting we need make sure that all the variables are in the
+correct format (e.g., numeric or factor). We will experiment and work with
+**types_stations** and **who_region** later, so we will clean and
+convert it now with the other variables:
 
 ```{r}
 
 air_data$pm25_concentration <- as.numeric(air_data$pm25_concentration)
+air_data$pm10_concentration <- as.numeric(air_data$pm10_concentration)
+air_data$no2_concentration  <- as.numeric(air_data$no2_concentration)
 air_data$population <- as.numeric(air_data$population)
 air_data$type_of_stations <- as.character(air_data$type_of_stations)
 air_data$who_region <- as.factor(air_data$who_region)
@@ -93,60 +110,84 @@ air_data$who_region <- as.factor(air_data$who_region)
 
 ```
 
-the data contains a lot of missing values, n/a so we must remove the rows that contain this as R cannot handle this. 
-
-#So we clean the data, cleaning types_station and region as well as will will work with it later 
+The data contains a lot of missing values **(N/A)**. Since R cannot
+handle missing data directly in regression, we remove any rows
+containing **N/A** in the relevant columns.
 
 ```{r}
-clean_data <- na.omit(air_data[, c("pm25_concentration", "population", "year","type_of_stations","who_region")])
+clean_pm25 <- na.omit(air_data[, c("pm25_concentration", "population", "year","type_of_stations","who_region")])
+clean_pm10 <- na.omit(air_data[, c("pm10_concentration", "population", "year", "type_of_stations", "who_region")])
+clean_no2  <- na.omit(air_data[, c("no2_concentration",  "population", "year", "type_of_stations", "who_region")])
 
 
 ```
 
-Now we fit the linear model 
+# 2. Initial Model Fitting for PM₂.₅ Concentration
+
+Now the data has been cleaned, it is ready for modelling. We start with
+response varibable **Y1 = pm25_concentration**:
+
+We fit the following linear regression model; **pm25_concentration** as
+a function of **Population** and **Year**:
+
+$$
+\text{PM}_{2.5,i} = \beta_0 + \beta_1 \cdot \text{Population}_i + \beta_2 \cdot \text{Year}_i + \varepsilon_i,
+$$
+
+where $\varepsilon_i \sim N(0, \sigma^2)$ is the error term.
+
 
 ```{r}
 
 pollution_fit_raw <- lm(pm25_concentration ~ population + year , 
-                        data = clean_data)
+                        data = clean_pm25)
 
 # View results of coefficents 
 summary(pollution_fit_raw)
 
 ```
-We fitted the following linear regression model:
 
-\[
-\text{PM}_{2.5,i} = \beta_0 + \beta_1 \cdot \text{Population}_i + \beta_2 \cdot \text{Year}_i + \varepsilon_i,
-\]
-
-where $\varepsilon_i \sim N(0, \sigma^2)$ is the error term.
 
 The estimated coefficients can be interpreted as follows:
 
-- **Intercept**: $\hat{\beta}_0 = -218.4$ ($p = 0.0455$).  
-  This represents the expected $\text{PM}_{2.5}$ concentration when both population and year are equal to zero.  
-  Since this situation is not realistic, the intercept is not of direct substantive interest.
+-   **Intercept**: $\hat{\beta}_0 = -218.4$\
+    This represents the expected ${PM}_{2.5}$ concentration when
+    both population and year are equal to zero.\
+    Since this situation is not realistic, the intercept is not of
+    direct interest.
 
-- **Population**: $\hat{\beta}_1 \approx 1.86 \times 10^{-6}$ ($p < 2 \times 10^{-16$).  
-  For each additional person in the population, $\text{PM}_{2.5}$ increases by approximately $0.0000019$ units.  
-  In practical terms, an increase of one million people is associated with an increase of about $1.9$ units in $\text{PM}_{2.5}$.  
-  This effect is highly statistically significant, showing that population size is strongly related to pollution levels.
+-   **Population**: $\hat{\beta}_1 \approx 1.86 \times 10^{-6}$\
+    For each additional person in the population, ${PM}_{2.5}$
+    increases by approximately $0.0000019$ units.\
+    In practical terms, an increase of one million people is associated
+    with an increase of about $1.9$ units in ${PM}_{2.5}$.\
+    This effect is highly statistically significant, showing that
+    population size is strongly related to pollution levels.
 
-- **Year**: $\hat{\beta}_2 \approx 0.118$ ($p = 0.0288$).  
-  Holding population constant, each additional year is associated with an increase of about $0.12$ units in $\text{PM}_{2.5}$.  
-  This suggests a slight upward trend in pollution over time across the dataset.
+-   **Year**: $\hat{\beta}_2 \approx 0.118$ \
+    Holding population constant, each additional year is associated with
+    an increase of about $0.12$ units in ${PM}_{2.5}$.\
+    This suggests a slight upward trend in pollution over time across
+    the dataset.
 
-- **Model fit**: The coefficient of determination is $R^2 \approx 0.051$.  
-  This means that the model explains only around 5\% of the variation in $\text{PM}_{2.5}$ concentrations.  
-  While population and year are statistically significant predictors, much of the variability remains unexplained, indicating that additional covariates (such as type of station, country, or geographic factors) would be needed to improve the model.
+-   **Model fit**: The coefficient of determination is
+    $R^2 \approx 0.051$.\
+    This means that the model explains only around 5% of the variation
+    in ${PM}_{2.5}$ concentrations.\
+    While population and year are statistically significant predictors,
+    the majority of the variability remains unexplained, indicating that
+    additional covariates (such as type of station, country, or
+    geographic factors) would be needed to improve the model.
+
+Thus, we can see that important predictors are missing. Our next step is to try and and tidy up the predictor *type_of_stations* so we can include it in our analysis.
   
-  Thus, we can see that important predictors are missing. Our next step is to try and and tidy up the predictor type_of_stations so we can include it in our analysis. 
-  
-  To resolve this issue of multiple location types for one city, we need to force each observation into one category. 
-  As an attempt to do this, I am going to quantify station type by giving it a numeric "population density score", then avergaing if a city has multiple categories. 
 
-We could use the following rankings 
+# 3. Extending the Model with type_of_station as a Numeric Predictor
+
+To resolve this issue of multiple location types for one city, we need to force each observation into one category. As an attempt to do this, we will quantify station type by giving it a numeric"population density score", then taking the average if a city has multiple categories.
+
+We could use the following rankings
+
 ```{r}
 # Define ranking system
 rankings <- c("Urban" = 5, "Traffic" = 4, "Suburban" = 3, "Background" = 2, "Rural" = 1)
@@ -160,93 +201,223 @@ get_rank <- function(x) {
 }
 ```
 
-Then we apply this to our data set and fit the new model 
+Then we apply this to our data set and fit the following extended linear regression model including a
+numeric ranking for station type:
+
+$$
+\text{PM}_{2.5,i} = \beta_0 + \beta_1 \cdot \text{Population}_i + \beta_2 \cdot \text{Year}_i + \beta_3 \cdot \text{StationRank}_i + \varepsilon_i,
+$$
+
+where $\varepsilon_i \sim N(0,\sigma^2)$.
 
 ```{r}
 
 #apply ranking
-clean_data$station_rank <- sapply(clean_data$type_of_stations, get_rank)
+clean_pm25$station_rank <- sapply(clean_pm25$type_of_stations, get_rank)
 
 # Fit model with numeric rank
-fit <- lm(pm25_concentration ~ population + year + station_rank, data = clean_data)
+fit <- lm(pm25_concentration ~ population + year + station_rank, data = clean_pm25)
 summary(fit)
 
 ```
-We fitted the following extended linear regression model including a numeric
-ranking for station type:
+
+
+The *new* estimated coefficients can be interpreted as follows:
+
+-   **Station rank**: $\hat{\beta}_3 \approx 0.70$ .\
+    Moving one step up in the ranking (e.g. from Rural to Suburban, or
+    Suburban to Urban)\
+    is associated with an increase of about $0.70$ units in PM$_{2.5}$.\
+    This confirms that more urbanised stations are linked with higher
+    pollution.
+
+-   **Model fit**: The $R^2$ is $0.068$, meaning the model explains
+    about $7\%$ of the variance in PM$_{2.5}$.\
+    This is still low, but represents an improvement compared with the
+    simpler model (population + year only),\
+    where $R^2 \approx 0.051$.
+
+
+Although this extended model preforms better, it still leaves much of the variation unexplained. 
+Up to this point, our predictors, **population**, **year**, and **station rank** ,have all been continuous variables.  
+However, air pollution is also strongly influenced by **geography and regional policy differences**, which are not captured by numeric predictors alone.
+
+To account for this, we now introduce **regional and country-level effects** into the model. 
+
+# 4. Extending the Model with Who_region
+
+Pollution levels could be heavily shaped by **geography and policy**, so adding
+a factor for country or region will likely explain more variation.
+
+In terms of the linear model, this means adding **categorical (factor) variables** that represent different world regions.  
+Each region is encoded using dummy variables, allowing the model to estimate a separate intercept for each group.  
+This remains a **linear model**, but one that can capture differences in baseline pollution levels across regions.
+
+The extended linear regression model can be written as:
 
 \[
-\text{PM}_{2.5,i} = \beta_0 + \beta_1 \cdot \text{Population}_i + \beta_2 \cdot \text{Year}_i + \beta_3 \cdot \text{StationRank}_i + \varepsilon_i,
+\text{PM}_{2.5,i} = \beta_0 + \beta_1 \cdot \text{Population}_i + \beta_2 \cdot \text{Year}_i + \beta_3 \cdot \text{StationRank}_i + \sum_{k=1}^{K-1} \gamma_k \cdot \text{Region}_{k,i} + \varepsilon_i,
 \]
 
-where $\varepsilon_i \sim N(0,\sigma^2)$.
-
-The estimated coefficients can be interpreted as follows:
-
-- **Station rank**: $\hat{\beta}_3 \approx 0.70$ ($p < 10^{-12}$).  
-  Moving one step up in the ranking (e.g. from Rural to Suburban, or Suburban to Urban)  
-  is associated with an increase of about $0.70$ units in PM$_{2.5}$.  
-  This confirms that more urbanised stations are linked with higher pollution.
-
-- **Model fit**: The $R^2$ is $0.068$, meaning the model explains about $7\%$ of the variance in PM$_{2.5}$.  
-  This is still low, but represents an improvement compared with the simpler model (population + year only),  
-  where $R^2 \approx 0.051$.  
-  
-  
-  As of now we are assuming linearity. For example, we assume every extra person adds the same tiny increase in PM$_{2.5}$. So the difference between a city of 1 million and 2 million is treated the same as between 10 million and 11 million.In reality, pollution doesn’t usually increase in a straight line like that — very large cities often don’t keep getting proportionally dirtier forever. 
-  
-  So to extend our analysis, we can add some non-linear effects: 
-  - By taking the log of population, we say "pollution rises quickly as cities grow from small to medium, but the effect slows down in very large cities
-  
-  
-  
-```{r}
-# Create log-transformed population
-clean_data$log_population <- log(clean_data$population + 1)
+where $\varepsilon_i \sim N(0, \sigma^2)$ represents the error term, and each $\gamma_k$ measures the difference in average pollution between region *k* and the baseline region.
 
 
-# Fit model with log-transformed population
-fit_log <- lm(pm25_concentration ~ log_population + year + station_rank,
-              data = clean_data)
+From our dataset we have the following standard **WHO regional groupings**:
 
-# View results
-summary(fit_log)
-```
- ** this hasnt worked very well lol **
- 
- Let us try something else - bring in regional/ country effects. 
- 
- Pollution levels could be heavily shaped by geography and policy, adding a factor for country or regoin will likelu explain more variation.
- 
- From our dataset we have the following standard groupings of countries:
- 
- - AFR = Africa
- - AMR = Region of the Americas
- - SEAR = South- East Asia Region
- - EUR = European Region
- - EMR = Eastern Mediterranean 
- - WPR = Western Pacific Regiom
- - NonMS = Non-Member States ( countries not in WHO, often small territories)
+-   **AFR** = Africa
+-   **AMR** = Region of the Americas
+-   **SEAR** = South- East Asia Region
+-   **EUR** = European Region
+-   **EMR** = Eastern Mediterranean
+-   **WPR** = Western Pacific Regiom
+-   **NonMS** = Non-Member States ( countries not in WHO, often small
+    territories)
 
 ```{r}
 
-fit_region <- lm(pm25_concentration ~ log_population + year + station_rank + who_region,
-                 data = clean_data)
+fit_region <- lm(pm25_concentration ~population + year + station_rank + who_region,
+                 data = clean_pm25)
 summary(fit_region)
 
 ```
 
+Including the *WHO_region* as a categorical factor improves the model fit,
+raising the coefficient of determination from about 7% to 11%. This
+confirms that geography plays an important role in explaining variation
+in PM$_{2.5}$ concentrations, beyond population size, year, and station
+type. In this specification, Africa (AFR) is treated as the baseline
+region.
 
-Including WHO region as a categorical factor improves the model fit, raising the coefficient of determination from about 7% to 11%. This confirms that geography plays an important role in explaining variation in PM$_{2.5}$ concentrations, beyond population size, year, and station type. In this specification, Africa (AFR) is treated as the baseline region. 
+-   **Americas (AMR)**: estimated coefficient of --5.03, not
+     different from Africa.\
+-   **South-East Asia (SEAR)**: coefficient of +7.12, but not
+     significant.\
+-   **Europe (EUR)**: coefficient of --1.35, not 
+    significant.\
+-   **Eastern Mediterranean (EMR)**: coefficient of +18.73,
+     significant ($p = 0.004$), indicating substantially
+    higher PM$_{2.5}$ compared to Africa.\
+-   **Western Pacific (WPR)**: coefficient of -0.21, not significant.\
+-   **Non-Member States (NonMS)**: coefficient of +1.90, not
+    significant.
 
-- **Americas (AMR)**: estimated coefficient of –5.03, not significantly different from Africa.  
-- **South-East Asia (SEAR)**: coefficient of +7.12, but not statistically significant.  
-- **Europe (EUR)**: coefficient of –1.35, not statistically significant.  
-- **Eastern Mediterranean (EMR)**: coefficient of +18.73, statistically significant ($p = 0.004$), indicating substantially higher PM$_{2.5}$ compared to Africa.  
-- **Western Pacific (WPR)**: coefficient of –0.21, not significant.  
-- **Non-Member States (NonMS)**: coefficient of +1.90, not significant.  
+Overall, the results suggest that while most regional effects are not
+statistically distinguishable from Africa, the Eastern Mediterranean
+Region records significantly higher levels of PM$_{2.5}$ even after
+accounting for population, year, and station type.
 
-Overall, the results suggest that while most regional effects are not statistically distinguishable from Africa, the Eastern Mediterranean Region records significantly higher levels of PM$_{2.5}$ even after accounting for population, year, and station type.
+Compared with the baseline model in **2. Initial Model Fitting for PM₂.₅ Concentration**, which included only
+**population** and **year** and explained about 5% of the variation, the
+addition of **station_rank** and **WHO_region** has roughly doubled explanatory
+power to 11%, highlighting the importance of including geographic and
+contextual factors in the analysis.
+Although the $R^2$ value is still extremely low, this model provides the best fit among the three tested so far.  
+We will therefore use this specification to train the next two response variables, **Y_2 = PM₁₀** and **Y_3 = NO₂**.
 
-Compared with the very first baseline model, which included only population and year and explained about 5% of the variation, the addition of station rank and WHO region has roughly doubled explanatory power to 11%, highlighting the importance of including geographic and contextual factors in the analysis.
+# 5. Applying the Model to Y_2 = PM_10 Concentration
+
+Next, we apply the same linear model specification used for **PM_2.5** to the **PM_10** data.  
+This allows us to assess whether the same predictors — **population**, **year**, **station_rank**, and **WHO_region**, also explain variation in **PM_10** concentrations.
+
+The fitted model is given by:
+
+\[
+\text{PM}_{10,i} = \beta_0 + \beta_1 \cdot \text{Population}_i + \beta_2 \cdot \text{Year}_i + \beta_3 \cdot \text{StationRank}_i + \sum_{k=1}^{K-1} \gamma_k \cdot \text{Region}_{k,i} + \varepsilon_i,
+\]
+
+where $\varepsilon_i \sim N(0, \sigma^2)$.
+
+```{r}
+# Apply the same station ranking system to the PM10 dataset
+clean_pm10$station_rank <- sapply(clean_pm10$type_of_stations, get_rank)
+
+# Fit the model using the same predictors as before
+fit_pm10 <- lm(pm10_concentration ~ population + year + station_rank + who_region,
+               data = clean_pm10)
+
+# Display summary of results
+summary(fit_pm10)
+
+```
+
+These estimated coefficients can be interpreted as follows: 
+
+-   **Population**:$\hat{\beta}_1 \approx 1.25 \times 10^{-6}$.\
+    Each additional person in the population increases PM_10 concentration by about 0.0000013 units.
+    In practical terms, a city with one million more people has roughly 1.25 units higher PM_10.
+    
+-   **Year**:$\hat{\beta}_2 \approx -0.476$.\
+    Holding population constant, PM_10 decreases by about 0.48 units per year, suggesting an overall          decline over time.
+
+-   **Station Rank**: $\hat{\beta}_3 \approx 1.32$ .\
+    Moving up one level in urbanisation (e.g. rural → suburban) increases PM_10 by about 1.3 units,          confirming higher pollution in urban areas.
+    
+-   **Regional effects**: Compared with Africa (baseline), Europe (–27.9), South-East Asia (–12.1), and       Western Pacific (–29.3) show significantly lower PM_10 levels, while the Eastern Mediterranean  (+20.3) records higher pollution.
+
+-   **Model fit**:the coefficient of determination is $R^2 \approx 0.142$.\
+    This model explains about 14% of the variation in PM_10 concentrations — higher than what was           explained for pm_25, but still indicating that additional factors likely influence air quality.
+    
+
+# 6. Applying the model to Y_3 = N0_2 Concentration 
+
+Finally, we apply the same linear model specification used for **PM_2.5** and **PM_10** to the **NO_2** data.  
+This allows us to test whether the same predictors **population**, **year**, **station rank**, and **WHO region** — also explain variation in **NO₂ concentrations** across cities and regions.
+
+The fitted model is given by:
+
+\[
+\text{NO}_{2} = \beta_0 + \beta_1 \cdot \text{Population}_i + \beta_2 \cdot \text{Year}_i + \beta_3 \cdot \text{StationRank}_i + \sum_{k=1}^{K-1} \gamma_k \cdot \text{Region}_{k,i} + \varepsilon_i,
+\]
+
+where $\varepsilon_i \sim N(0, \sigma^2)$.
+
+```{r}
+
+# Apply the same station ranking system to the NO2 dataset
+clean_no2$station_rank <- sapply(clean_no2$type_of_stations, get_rank)
+
+# Fit the model using the same predictors as before
+fit_no2 <- lm(no2_concentration ~ population + year + station_rank + who_region,
+              data = clean_no2)
+
+# Display summary of results
+summary(fit_no2)
+
+```
+
+These estimated coefficients can be interpreted as follows: 
+
+-   **Population**:$\hat{\beta}_1 \approx 2.68 \times 10^{-6}$ .\
+    Each additional person in the population increases N0_2 concentration by about 0.0000027 units.
+    In practical terms, a city with one million more people has roughly 2.7 units higher N0_2.
+    
+-   **Year**:$\hat{\beta}_2 \approx -0.740$.\
+    Holding population constant, N0_2 decreases by about 0.74 units per year, suggesting a clear             downwards trend over time.
+
+-   **Station Rank**: $\hat{\beta}_3 \approx 3.02$.\
+    Moving up one level in urbanisation (e.g. rural -> suburban -> urban) increases N0_2 by about 3          units, showing that more urban areas experience substantially higher N0_2 pollution.
+    
+-   **Regional effects**: Compared with Africa (baseline),\
+    Europe (+10.6), Eastern Mediterranean (+7.7), and South-East Asia (+4.9) show higher NO₂ levels,
+    while Western Pacific (–3.4) is slightly lower but not statistically significant.
+
+-   **Model fit**: The coefficient of determination is $R^2 \approx 0.239$.\
+    This model explains about 24% of the variation in NO₂ concentrations — the highest explanatory power     among the three models, suggesting that NO₂ levels are more strongly linked to population size,          urbanisation, and regional context.
+
+# 7. Conclusion 
+
+This exploratory analysis investigated how **population size**, **time**, **station type**, and **regional factors** influence air pollution levels across cities.  
+Across all three pollutants, **PM_2.5**, **PM_10**, and **NO_10**,population and urbanisation emerged as strong, statistically significant predictors of higher pollution.  
+Regional effects also proved important: while some regions (such as the Eastern Mediterranean) experienced higher pollution, others (like Europe and the Western Pacific) recorded significantly lower levels.  
+
+However, across the three final models for **PM_2.5**, **PM_10**, and **NO_10**, the value $R^2$ did not exceed 0.239, indicating that while these investigated predictors do explain a part of variation in pollution levels, a very large proportion still remains unexplained. 
+
+To amend this and further our analysis, we would need to consider additional explanatory variables. 
+These could include: 
+
+1. Whether conditions - temperature, wind speed, humidity. 
+2. Industrial emissions. 
+3. Traffic density. 
+
+Similarly, we could consider exploring non-linear relationships. This could include squared or log-transformed terms for population or year, as an attempt to capture diminishing or accelerating effects. 
 
