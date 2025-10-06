@@ -1,5 +1,5 @@
 ---
-title: "01-DataExploration- Air Pollution Modelling"
+title: "01-Data Exploration- Air Pollution Modelling"
 output:
   html_document: default
   pdf_document: default
