@@ -17,7 +17,7 @@ library(dplyr)
 some things could explore-
 
 - which cities have highest average AQI
-- avaerage level of year pollutant per year
+- average level of year pollutant per year
 -city /  country with cleanest air on average - could look at general trend here, are they more/less developed?- this knowledge of the countries would this be considered expert knowledge
 
 
@@ -27,39 +27,57 @@ how does air quality change as population increases,are different pollutants dif
 
 lets look at the dataset and clean the data set for each column: pm10_concentration, pm25_concentration, no2_concentration, population.
 ```{r}
-dataset<- who_data
+library(readxl)  # load the package
+
+dataset <- read_excel("who_data.xlsx")
+
 dataset
 
 dataset[dataset == "NA"] <- NA
 
 
-clean_data_pm10 <- dataset[!is.na(dataset$pm10_concentration), ]
-clean_data_pm25 <- dataset[!is.na(dataset$pm25_concentration), ]
-clean_data_no2 <- dataset[!is.na(dataset$no2_concentration), ]
-clean_data_pop <- dataset[!is.na(dataset$population), ]
+clean_data_pm10 <- dataset[!is.na(dataset$pm10_concentration), ] %>%
+  mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
+                as.numeric))
+clean_data_pm25 <- dataset[!is.na(dataset$pm25_concentration), ] %>%
+  mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
+                as.numeric))
+clean_data_no2 <- dataset[!is.na(dataset$no2_concentration), ] %>%
+  mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
+                as.numeric))
+clean_data_pop <- dataset[!is.na(dataset$population), ] %>%
+  mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
+                as.numeric))
 
 clean_data_all <- dataset[
   !is.na(dataset$population) &
   !is.na(dataset$no2_concentration) &
   !is.na(dataset$pm25_concentration) &
   !is.na(dataset$pm10_concentration),
-]
-clean_data_pm10 <- clean_data_pm10 %>%
-  mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
-                as.numeric))
-clean_data_pm25 <- clean_data_pm25 %>%
+] %>%
   mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
                 as.numeric))
 
+# lets also clean the data for one concentration and population so we will have more data points when we visulise the data in the graph
 
-clean_data_no2 <- clean_data_no2 %>%
+clean_data_pm10_pop <- dataset[
+  !is.na(dataset$population) &
+  !is.na(dataset$pm10_concentration),
+] %>%
   mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
                 as.numeric))
 
-clean_data_pop <- clean_data_pop %>%
+clean_data_pm25_pop <- dataset[
+  !is.na(dataset$population) &
+  !is.na(dataset$pm25_concentration),
+] %>%
   mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
                 as.numeric))
-clean_data_all <- clean_data_all %>%
+
+clean_data_no2_pop <- dataset[
+  !is.na(dataset$population) &
+  !is.na(dataset$no2_concentration),
+] %>%
   mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
                 as.numeric))
 
@@ -84,94 +102,193 @@ mean(clean_data_all$population)
 
 for the first bit of analysis lets use the fully cleaned data.
 ```{r}
-ggplot(data=clean_data_all, aes(x = population, y = pm10_concentration)) + geom_point()
-ggplot(data=clean_data_all, aes(x = population, y = pm25_concentration)) + geom_point()
-ggplot(data =clean_data_all, aes(x = population, y = no2_concentration)) + geom_point()
+ggplot(data=clean_data_all, aes(x = population, y = pm10_concentration, colour = year)) + geom_point()
+ggplot(data=clean_data_all, aes(x = population, y = pm25_concentration, colour = year)) + geom_point()
+ggplot(data =clean_data_all, aes(x = population, y = no2_concentration, colour = year)) + geom_point()
 ```
-lets take a look at just the data in the USA to understand some of the trends
+cant really see much of a trend here. this might be because we have such a spread in the size of the populations, perhaps taking the log of the population will help see the trend
+
 
 
 ```{r}
-clean_data_all_USA <- clean_data_all %>% filter(iso3 == 'USA', year == '2021' )
-clean_data_all_USA
+ggplot(data=clean_data_all, aes(x = population, y = pm10_concentration, colour = year)) + geom_point() + scale_x_log10() + geom_smooth(method = 'loess', color = 'red')
+ggplot(data=clean_data_all, aes(x = population, y = pm25_concentration, colour = year)) + geom_point() + scale_x_log10() + geom_smooth(method = 'loess', color = 'red')
+ggplot(data =clean_data_all, aes(x = population, y = no2_concentration, colour = year)) + geom_point() + scale_x_log10() + geom_smooth(method = 'loess', color = 'red')
+```
+this has helped us visualise the trend, 
 
-ggplot(data=clean_data_all_USA, aes(x = population, y = pm10_concentration)) + geom_point()
-ggplot(data=clean_data_all_USA, aes(x = population, y = pm25_concentration)) + geom_point()
-ggplot(data =clean_data_all_USA, aes(x = population, y = no2_concentration)) + geom_point()
+
+lets compare these two models
+```{r}
+# Linear model (no transformation)
+model1 <- lm(pm25_concentration ~ population, data = clean_data_all)
+
+# Log-transformed model
+model_log <- lm(pm25_concentration ~ log10(population), data = clean_data_all)
+
+summary(model1)
+summary(model_log)
 
 ```
+
+R^2 is lower for log model which suggests its actually a worse model which is the opposite of what we thoght when looking at the graphs.
+```{r}
+# Linear model (no transformation)
+model2 <- lm(pm10_concentration ~ population, data = clean_data_all)
+
+# Log-transformed model
+model2_log <- lm(pm10_concentration ~ log10(population), data = clean_data_all)
+
+summary(model2)
+summary(model2_log)
+
+# Linear model (no transformation)
+model3 <- lm(no2_concentration ~ population, data = clean_data_all)
+
+# Log-transformed model
+model3_log <- lm(no2_concentration ~ log10(population), data = clean_data_all)
+
+summary(model3)
+summary(model3_log)
+
+
+```
+for NO2 con and pm10 concentration the R^2 is higher for the log model suggesting the log relationship is a better model, this is what we expected from looking at the two different graphs
+
+
+lets take a look at just the data in a specific year.
+
+
+
+
+
 
 
 ```{r}
 
+clean_data_pm10_pop_2021 <- clean_data_pm10_pop %>% filter(year == '2021')
 
 
-clean_data_all_2021 <- clean_data_all %>% filter(year == '2021')
-ggplot(clean_data_all_2021, aes(x = population, y= pm10_concentration)) + geom_point()
+ggplot(clean_data_pm10_pop_2021, aes(x = population, y= pm10_concentration)) + geom_point()
 
-ggplot(clean_data_all_2021, aes(x = population, y= pm10_concentration)) + geom_point() + scale_x_log10()
+ggplot(clean_data_pm10_pop_2021, aes(x = population, y= pm10_concentration)) + geom_point() + scale_x_log10() + geom_smooth( method = 'loess' , color = 'red' )
+
+##
+
+
+clean_data_pm25_pop_2021 <- clean_data_pm25_pop %>% filter(year == '2021')
+
+
+ggplot(clean_data_pm25_pop_2021, aes(x = population, y= pm25_concentration)) + geom_point()
+
+ggplot(clean_data_pm25_pop_2021, aes(x = population, y= pm25_concentration)) + geom_point() + scale_x_log10() + geom_smooth( method = 'loess' , color = 'red' )
+
+
+
+clean_data_no2_pop_2021 <- clean_data_no2_pop %>% filter(year == '2021')
+
+
+ggplot(clean_data_no2_pop_2021, aes(x = population, y= no2_concentration)) + geom_point()
+
+ggplot(clean_data_no2_pop_2021, aes(x = population, y= no2_concentration)) + geom_point() + scale_x_log10() + geom_smooth( method = 'loess' , color = 'red' )
+
 ```
 
-not really seeing a trend here.
+Now we only have the concentrations for a specific year the trend here doesnt appear to be as obvious.
 
+
+adding the concentration to a world map
 ```{r}
 
 library(sf)
 library(rnaturalearth)
 library(rnaturalearthdata)
 
+```
+
+```{r}
 # Get world map polygons
 world <- ne_countries(scale = "medium", returnclass = "sf")
-map_data_2021 <- world %>%
-  left_join(clean_data_all_2021, by = c("iso_a3" = "iso3"))
 
+# Calculate average PM10 per country for 2021
+country_avg_pm10_2021 <- clean_data_pm10 %>%
+  filter(year == 2021) %>%
+  group_by(iso3) %>%
+  summarise(pm10_concentration = mean(pm10_concentration, na.rm = TRUE))
 
-ggplot(data = map_data_2021) +
+map_data_2021_pm10 <- world %>%
+  left_join(country_avg_pm10_2021, by = c("iso_a3" = "iso3"))
+
+ggplot(data = map_data_2021_pm10) +
   geom_sf(aes(fill = pm10_concentration)) +
   scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
   theme_minimal() +
   labs(fill = "PM10 (µg/m³)",
-       title = "Global PM10 Concentration by Country (2021)")
+       title = "Average PM10 Concentration by Country (2021)")
+####
 
-ggplot(data = map_data_2021) +
+country_avg_pm25_2021 <- clean_data_pm25 %>%
+  filter(year == 2021) %>%
+  group_by(iso3) %>%
+  summarise(pm25_concentration = mean(pm25_concentration, na.rm = TRUE))
+
+map_data_2021_pm25 <- world %>%
+  left_join(country_avg_pm25_2021, by = c("iso_a3" = "iso3"))
+
+ggplot(data = map_data_2021_pm25) +
   geom_sf(aes(fill = pm25_concentration)) +
   scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
   theme_minimal() +
   labs(fill = "PM25 (µg/m³)",
-       title = "Global PM25 Concentration by Country (2021)")
+       title = "Average PM25 Concentration by Country (2021)")
 
 
 
 ```
 
 
+
+
+
+not the best way to visulise the data as we have a lot of unfilled countries, looking at another year to check.
+
+
+
 ```{r}
 
-clean_data_all_2019 <- clean_data_all %>% filter(year == '2019')
+# Calculate average PM10 per country for 2019
+country_avg_pm10_2019 <- clean_data_pm10 %>%
+  filter(year == 2019) %>%
+  group_by(iso3) %>%
+  summarise(pm10_concentration = mean(pm10_concentration, na.rm = TRUE))
 
-map_data_2019 <- world %>%
-  left_join(clean_data_all_2019, by = c("iso_a3" = "iso3"))
+map_data_2019_pm10 <- world %>%
+  left_join(country_avg_pm10_2019, by = c("iso_a3" = "iso3"))
 
-
-ggplot(data = map_data_2019) +
+ggplot(data = map_data_2019_pm10) +
   geom_sf(aes(fill = pm10_concentration)) +
   scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
   theme_minimal() +
   labs(fill = "PM10 (µg/m³)",
-       title = "Global PM10 Concentration by Country (2019)")
+       title = "Average PM10 Concentration by Country (2019)")
+####
 
-ggplot(data = map_data_2019) +
+country_avg_pm25_2019 <- clean_data_pm25 %>%
+  filter(year == 2019) %>%
+  group_by(iso3) %>%
+  summarise(pm25_concentration = mean(pm25_concentration, na.rm = TRUE))
+
+map_data_2019_pm25 <- world %>%
+  left_join(country_avg_pm25_2019, by = c("iso_a3" = "iso3"))
+
+ggplot(data = map_data_2019_pm25) +
   geom_sf(aes(fill = pm25_concentration)) +
   scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
   theme_minimal() +
   labs(fill = "PM25 (µg/m³)",
-       title = "Global PM25 Concentration by Country (2019)")
-
+       title = "Average PM25 Concentration by Country (2019)")
 
 
 ```
 
-
-```{r}
-```
 
