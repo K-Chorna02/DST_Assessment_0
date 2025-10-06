@@ -17,5 +17,66 @@ data <- data[-c(6,14,15,17)]
 
 ```{r}
 summary(data)
+numeric_df <- data[sapply(data,is.numeric)]
+
+```
+
+```{r}
+#data$who_region <- as.factor(data$who_region)
+df_eu <- data[data$who_region=='4_Eur',]
+df_amr <- data[data$who_region=='2_Amr',]
+df_sea <- data[data$who_region=='3_Sear',]
+summary(df_amr)
+```
+```{r}
+# Count missing values in each column using sapply()
+regional_numeric <- numeric_df
+regional_numeric$who_region <- data$who_region
+afr_nas<- sapply(regional_numeric[regional_numeric$who_region=='1_Afr',], function(x) sum(is.na(x)))
+afr_nas <- (afr_nas/nrow(regional_numeric[regional_numeric$who_region=='1_Afr',]))*100
+                            
+amr_nas <- sapply(regional_numeric[regional_numeric$who_region=='2_Amr',], function(x) sum(is.na(x)))
+amr_nas <- (amr_nas/nrow(regional_numeric[regional_numeric$who_region=='2_Amr',]))*100
+
+sear_nas <- sapply(regional_numeric[regional_numeric$who_region=='3_Sear',], function(x) sum(is.na(x)))
+sear_nas <- (sear_nas/nrow(regional_numeric[regional_numeric$who_region=='3_Sear',]))*100
+
+eur_nas <- sapply(regional_numeric[regional_numeric$who_region=='4_Eur',], function(x) sum(is.na(x)))
+eur_nas <- (eur_nas/nrow(regional_numeric[regional_numeric$who_region=='4_Eur',]))*100
+
+emr_nas <- sapply(regional_numeric[regional_numeric$who_region=='5_Emr',], function(x) sum(is.na(x)))
+emr_nas <- (emr_nas/nrow(regional_numeric[regional_numeric$who_region=='5_Emr',]))*100
+
+wpr_nas <- sapply(regional_numeric[regional_numeric$who_region=='6_Wpr',], function(x) sum(is.na(x)))
+wpr_nas <- (wpr_nas/nrow(regional_numeric[regional_numeric$who_region=='6_Wpr',]))*100
+
+missing_vals <- data.frame(afr = afr_nas, amr = amr_nas, sear = sear_nas, eur = eur_nas, emr= emr_nas, wpr = wpr_nas)
+pm10 <- as.numeric(missing_vals[2,])
+pm25 <- as.numeric(missing_vals[3,])
+
+barplot(height = pm10, names.arg = colnames(missing_vals), xlab = "WHO Region", ylab = "Percentage of missing data", main = "pm10 concentration missing data")
+barplot(height = pm25, names.arg = colnames(missing_vals), xlab = "WHO Region", ylab = "Percentage of missing data", main = "pm25 concentration missing data")
+
+```
+
+```{r}
+library(reshape2)
+library(ggplot2)
+library(corrplot)
+# Melt the correlation matrix
+cor_matrix <- cor(numeric_df)
+pr
+melted_cor_matrix <- melt(cor_matrix)
+
+# Plot the correlation matrix using ggplot2
+ggplot(data = melted_cor_matrix, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "red", high = "blue", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab", 
+                       name="Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1)) +
+  coord_fixed()
 ```
 
