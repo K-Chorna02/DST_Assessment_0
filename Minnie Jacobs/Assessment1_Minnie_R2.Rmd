@@ -1,0 +1,240 @@
+---
+title: "WHO_analysis"
+author: "Minnie"
+date: "2025-09-29"
+output: html_document
+---
+
+Your challenge is to perform a literature review of the resources for helping
+you do data science in your chosen application domain. Think about the
+following topics:
+• What are the broad types of data?
+• What are the main types of resource?
+• What type of problems can the resources solve?
+• Are there any generic data science resources that might be applicable? In
+what sense are they applicable?
+
+• How might the approach be compared to other approaches, and/or applied
+across diﬀerent datasets?
+• How is the experience of sharing code via GitHub limiting, and/or enabling?
+You group should:
+• Find a range of books, websites and other resources that provide code;
+
+• Download and run the examples you find;
+
+• Make modifications to the code to create your groups’ own visualisa-
+tions of the data they are designed to analyse;
+
+• Combine them into a report that structures selected content logically.
+It may be natural to use multiple programming languages. It is likely that your team has some prior experience with coding, so consider continuing an analysis to obtain additional insight.
+
+
+We begin by loading our data into R. This data is sourced from the World Health Organisation, so we know it has been reliably sourced. 
+```{r load}
+data=read.csv("who_data.csv")
+```
+
+Next, cleaning and filtering, we removed unneccesary columns to focus on the key aspects of the dataset. 
+We look at the summary data to get an overview of our data.
+
+```{r summaries}
+#We deleted the columns that were irrelevant.
+data_new=subset(data,select=-c(X,X.1,X.2,X.3,who_ms))
+summary(data_new)
+
+```
+As we can see there are many missing values and some very large ranges. 
+First we consider reasons for these spikes, they could be measurement error, extreme pollution events as a consequence of natural disasters
+We could cap values to avoid extreme outliers, but we might not want to dismiss all the missing data as we could accidentally introduce bias if so.
+Let's explore if there is a trend in missing data, e.g. one country has more missing data than another.
+
+```{r pm10 something} 
+#How many NA's in pm10 for each year? This way we can decide which years to focus on ...
+
+library(dplyr)
+data_new %>%
+  group_by(country_name) %>%
+  summarise(
+    na_count = sum(is.na(pm10_concentration)),
+    count    = n(),
+    proportion=na_count/count) %>%
+  filter(proportion< 0.3 & count>500)
+
+library(dplyr)
+data_new %>%
+  group_by(country_name) %>%
+  summarise(
+    na_count = sum(is.na(pm25_concentration)),
+    count    = n(),
+    proportion=na_count/count) %>%
+  filter(proportion< 0.3 & count>100)
+
+library(dplyr)
+data_new %>%
+  group_by(country_name) %>%
+  summarise(
+    na_count = sum(is.na(no2_concentration)),
+    count    = n(),
+    proportion=na_count/count) %>%
+  filter(proportion< 0.3 & count>500)
+#We might consider not including countries who are missing 85% of their data, so could carry out a similar process for proportion>0.85
+library(dplyr)
+data_new %>%
+  group_by(city) %>%
+  summarise(
+    na_count = sum(is.na(pm10_concentration)),
+    count    = n(),
+    proportion=na_count/count) %>%
+  filter(proportion < 0.85)
+```
+
+Using the info I had for the NA values, I want to use the 20 countries with the most data. 
+
+```{r most relevant } 
+pm10_top_10= data_new %>%
+  filter(country_name %in%
+c("Austria","Belgium", "Bulgaria", "Czechia","France","Germany","Italy","Netherlands (Kingdom of the)", "Poland","Switzerland"))
+pm25_top_10= data_new %>%
+  filter(country_name %in% c("Australia","Canada","Chile","China","Norway","Slovakia","South Africa","United States of America"))
+no2_top_10= data_new %>%
+  filter(country_name %in%
+c("Austria","Belgium","France","Germany","Israel","Italy","Spain","Sweden","Switzerland","United Kingdom of Great Britain and Northern Ireland"))
+```
+Had to establish a compromise between count and na_count. 
+
+```{r pm10 Germany} 
+library(ggplot2)
+library(dplyr)
+germany_data <- data_new %>%
+  filter(country_name == "Germany")
+
+ggplot(germany_data, aes(x = year, y = pm10_concentration)) +
+  geom_point(color = "black", size = 1) +
+  labs(
+    title = "pm10 concentration by year in Germany",
+    x = "Year",
+    y = "Germany pm10 concentration")
+
+```
+Evidently the data in Germany has a clear trend. 
+
+Throughout our data exploration we may choose to focus on only a few countries, say:
+
+```{r pm10 top countries} 
+library(ggplot2)
+pm10_top_10 %>%
+  ggplot(aes(x = year, y = pm10_concentration)) +
+  geom_point(color = "black", size = 1) +
+  facet_wrap(~ country_name, scales = "free_y") +
+  labs(
+    title = "PM10 concentration by top 10 countries",
+    x = "Year",
+    y = "PM10 concentration"
+  )
+```
+
+```{r pm25 top countries} 
+library(ggplot2)
+pm25_top_10 %>%
+  ggplot(aes(x = year, y = pm10_concentration)) +
+  geom_point(color = "black", size = 1) +
+  facet_wrap(~ country_name, scales = "free_y") +
+  labs(
+    title = "PM25 concentration by top 10 countries",
+    x = "Year",
+    y = "PM25 concentration"
+  )
+```
+
+```{r no2 top countries} 
+library(ggplot2)
+no2_top_10 %>%
+  ggplot(aes(x = year, y = pm10_concentration)) +
+  geom_point(color = "black", size = 1) +
+  facet_wrap(~ country_name, scales = "free_y") +
+  labs(
+    title = "No2 concentration by top 10 countries",
+    x = "Year",
+    y = "No2 concentration"
+  )
+```
+
+I decided to explore built in packages in RStudio and see which were relevant to our project. I came across the "openair" package, which is particulary relevant to pollutant data. 
+Included in this package are TimePlot, ... , ... 
+
+```{r openair}
+#install.packages("openair")
+
+library(openair)
+library(dplyr)
+library(lubridate)
+
+data_openair_country <- pm10_top_10 %>%
+  filter(!is.na(year)) %>%
+  group_by(country_name, year) %>%
+  summarise(
+    pm25 = mean(pm25_concentration, na.rm = TRUE),
+    pm10 = mean(pm10_concentration, na.rm = TRUE),
+    no2  = mean(no2_concentration, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(date = ymd(paste0(year, "-06-30"))) %>%  # mid-year date
+  select(date, country_name, pm25, pm10, no2)
+
+# Now plot
+timePlot(data_openair_country,
+         pollutant = c("pm25", "pm10", "no2"),
+         type = "country_name",
+         main = "Annual PM2.5 and NO2 Trends by Country")
+
+```
+```{r pm25 openair}
+library(openair)
+library(dplyr)
+library(lubridate)
+
+data_openair_country <- pm25_top_10 %>%
+  filter(!is.na(year)) %>%
+  group_by(country_name, year) %>%
+  summarise(
+    pm25 = mean(pm25_concentration, na.rm = TRUE),
+    pm10 = mean(pm10_concentration, na.rm = TRUE),
+    no2  = mean(no2_concentration, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(date = ymd(paste0(year, "-06-30"))) %>%  # mid-year date
+  select(date, country_name, pm25, pm10, no2)
+
+# Now plot
+timePlot(data_openair_country,
+         pollutant = c("pm25", "pm10", "no2"),
+         type = "country_name",
+         main = "Annual PM2.5 and NO2 Trends by Country")
+```
+```{r no2 openair}
+library(openair)
+library(dplyr)
+library(lubridate)
+
+data_openair_country <- no2_top_10 %>%
+  filter(!is.na(year)) %>%
+  group_by(country_name, year) %>%
+  summarise(
+    pm25 = mean(pm25_concentration, na.rm = TRUE),
+    pm10 = mean(pm10_concentration, na.rm = TRUE),
+    no2  = mean(no2_concentration, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(date = ymd(paste0(year, "-06-30"))) %>%  # mid-year date
+  select(date, country_name, pm25, pm10, no2)
+
+# Now plot
+timePlot(data_openair_country,
+         pollutant = c("pm25", "pm10", "no2"),
+         type = "country_name",
+         main = "Annual PM2.5 and NO2 Trends by Country")
+```
+
+
+
+
