@@ -236,4 +236,3 @@ After extensive exploration of our data, we can conclude that there is a general
 The ggplots were easier to read when picking out key information such as year and specific concentration. However for exploring trends, openair was very useful as it provided a clear visual representation of all concentrations- making it easy to compare between countries and across different particle types.
 
 
-
