@@ -32,7 +32,6 @@ lets look at the dataset
 ```{r}
   
 dataset <- read_excel("who_data.xlsx")
-
 dataset
 ```
 
