@@ -27,7 +27,6 @@ looking at population specifically:
 how does air quality change as population increases,are different pollutants different in different pop sizes.
 
 ## Cleaning the Dataset
-
 lets look at the dataset
 ```{r}
   
