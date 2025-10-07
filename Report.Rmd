@@ -538,6 +538,15 @@ dataset_popbrackets <- clean_data_all_pop %>%
 
 ```{r}
 
+dataset_popbrackets <- clean_data_all %>%
+  mutate(pop_bracket = case_when( # create categorical groups, create a new column pop_bracket which assigns the population into the categorical sections
+    population < 100000 ~ "<100K",
+    population < 250000 ~ "100K–250K",
+    population < 1000000 ~ "250K–1M",
+    population < 5000000 ~ "1M–5M",
+    TRUE ~ ">5M"
+  ))
+
 avg_con <- dataset_popbrackets %>%
   group_by(pop_bracket) %>%
   summarise(
@@ -546,28 +555,25 @@ avg_con <- dataset_popbrackets %>%
     mean_no2 = mean(no2_concentration, na.rm = TRUE)
   )
 
-
 avg_con_long <- avg_con %>%
   pivot_longer(cols = starts_with("mean_"), # changing data format
-               names_to = "concentration",
+               names_to = "pollutant",
                values_to = "avg_concentration") %>%
-  mutate(concentration = recode(concentration,
+  mutate(pollutant = recode(pollutant,
                             "mean_pm25" = "PM2.5",
                             "mean_pm10" = "PM10",
-                            "mean_no2" = "NO₂"),
+                            "mean_no2" = "NO2"),
          pop_bracket = factor(pop_bracket,
                               levels = c("<100K", "100K–250K", "250K–1M", "1M–5M", ">5M"))) #orders the x-axis numerically
 
 
-ggplot(avg_con_long, aes(x = pop_bracket, y = avg_concentration, fill = concentration)) +
+ggplot(avg_con_long, aes(x = pop_bracket, y = avg_concentration, fill = pollutant)) +
   geom_col(position = "dodge") +
   labs(title = "Average Pollutant Concentration by Population Bracket",
        x = "Population Bracket",
        y = "Average Concentration ",
-       fill = "concentration") +
+       fill = "pollutant") +
   theme_minimal()
-
-
 ```
 
 From the graph we can see that as the population size increases the average concentration of pollutant increases.
@@ -590,9 +596,13 @@ ggplot(data=clean_data_all_pop, aes(x = population, y = pm10_concentration, colo
 ggplot(data=clean_data_all_pop, aes(x = population, y = pm25_concentration, colour = year)) + geom_point() + scale_x_log10() + geom_smooth(method = 'loess', color = 'red') + geom_smooth(method = 'lm', color = 'green')
 ggplot(data =clean_data_all_pop, aes(x = population, y = no2_concentration, colour = year)) + geom_point() + scale_x_log10() + geom_smooth(method = 'loess', color = 'red') + geom_smooth(method = 'lm', color = 'green')
 ```
-Now we can see a trend in the data- for all the concentrations as the population size increases the concentration increases. This is something we would have expected as a higher population would mean more waste and pollution and hence worse air quality.
+
+Now we can see a trend in the data- for all the pollutants as the population size increases the concentration increases. This is something we would have expected as a higher population would mean more waste and pollution and hence worse air quality. We have also fit a straight linear line (green) and a loess line (red) which fits a smooth flexible curve to the model in order to highlight the general trend of the plots.
 
 ## Comparing models
+
+We now compare the two models from the above graphs (linear model and the log transformed model) to determine statistically which model is best
+
 ```{r}
 # Linear model - same as above
 model1 <- lm(pm25_concentration ~ population, data = clean_data_all_pop)
@@ -604,7 +614,8 @@ summary(model1)
 summary(model_log)
 ```
 
-Here $ R^2$ is lower for the log model which suggests its actually a worse model which is the opposite of what we thought when looking at the graphs.
+Here  R^2 is lower for the log model which suggests its actually a worse model which is the opposite of what we thought when looking at the graphs.
+
 For the next two models:
 
 ```{r}
@@ -627,10 +638,11 @@ summary(model3)
 summary(model3_log)
 ```
 
-for NO2 concentration and pm10 concentration the $ R^2$ is higher for the log model suggesting the log relationship is a better model, this is what we expected from looking at the two different graphs.
+For NO2 concentration and pm10 concentration the  R^2 is higher for the log model suggesting the log relationship is a better model, this is what we expected from looking at the two different graphs.
 
 ## Conclusion
 
+In this section we have seen how the population size impacts the average concentration of each pollutant, as the population size increases the average concentration of pollutants increases. As we have such a spread in the values of the population we have transformed our data using a log transformation and this made it visually better to see the trends in the data, in addition after using the R^2 test we saw that the log model for pm25 and NO2 concentrations were better models.
 
 
 
