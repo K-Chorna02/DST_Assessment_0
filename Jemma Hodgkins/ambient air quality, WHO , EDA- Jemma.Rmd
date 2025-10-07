@@ -93,7 +93,6 @@ clean_data_no2_pop <- dataset[
 ] %>%
   mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
                 as.numeric))
-
 ```
 
 lets calculate some average values of columns
