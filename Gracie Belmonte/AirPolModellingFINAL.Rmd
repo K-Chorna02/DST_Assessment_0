@@ -186,7 +186,8 @@ Thus, we can see that important predictors are missing. Our next step is to try 
 
 To resolve this issue of multiple location types for one city, we need to force each observation into one category. As an attempt to do this, we will quantify station type by giving it a numeric"population density score", then taking the average if a city has multiple categories.
 
-We could use the following rankings
+We could use the following rankings:
+[reference strsplit()]
 
 ```{r}
 # Define ranking system
