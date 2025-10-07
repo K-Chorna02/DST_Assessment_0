@@ -1,3 +1,14 @@
+---
+title: "Using Global City Air Quality Data "
+author: "Kateryna Chorna"
+output:
+  html_document:
+    toc: true
+    theme: united
+    number_sections: true
+---
+
+
 # Overview
 
 Using global city air quality data from WHO, in this report I:
@@ -35,7 +46,7 @@ library(kableExtra)
 getwd()
 data <- read_excel("../data/who_air_quality_2024.xlsx", sheet = 3)
 ```
-
+# Exploratory Data Analysis
 We get a summary of the data. Some data should be numeric, but it's not read as numeric by R. So we convert some numeric-like columns stored as character to numeric.
 
 ```{r}
@@ -51,7 +62,7 @@ data[num_cols] <- lapply(data[num_cols], as.numeric) # set the data as numeric
 summary(data)
 ```
 
-# Correlation between PM2.5, PM10, and NO₂
+## Correlation between PM2.5, PM10, and NO₂
 
 ```{r}
 corr_matrix <- cor(data[, c("pm25_concentration","pm10_concentration","no2_concentration")],
@@ -100,7 +111,7 @@ pairs(data_highcov[, c("pm25_concentration","pm10_concentration","no2_concentrat
 
 After restricting to cities with at least 75% annual coverage, PM2.5 and PM10 remain strongly positively correlated (r ≈ 0.82). Correlations with NO₂ are moderate (\~0.43). The slight reduction in correlation reflects the removal of extreme values, making these estimates more reliable.
 
-# Trends Over Time
+## Trends Over Time
 
 We calculate the average concentration per year for PM2.5, PM10, and NO2 using all available data. This shows overall trends in air quality over time and lets us compare pollutants. Averages ignore missing values, so each year reflects the data that’s actually recorded.
 
@@ -118,7 +129,7 @@ ggplot(trend_data, aes(x = as.integer(year))) +
   scale_colour_manual(values = c("PM10" = "blue",
                                  "NO2"  = "green",
                                  "PM2.5" = "red")) +
-  scale_x_continuous(breaks = unique(trend_data_complete$year)) +
+  scale_x_continuous(breaks = unique(trend_data$year)) +
   labs(title = "Global Trends in Air Pollutant Levels Over Time",
        y = "Average Concentration (µg/m³)", x = "Year",
        colour = "Pollutant") +
@@ -133,6 +144,8 @@ To get a clearer picture, we focus on rows where all three pollutants are record
 
 ```{r}
 # Trends Over Time (Complete Data )
+# Complete data (all three pollutants recorded)
+data_complete <- data[complete.cases(data[, c("pm25_concentration","pm10_concentration","no2_concentration")]), ]
 
 
 trend_data_complete <- data_complete %>%
@@ -224,7 +237,7 @@ kable(summary_table,
 
 For years 2011 and 2012, there are only 1–2 records available. This makes the average concentrations for those years highly unreliable.
 
-# Coverage by region
+## Coverage by region
 
 Now we look at how data coverage is spread across regions. This shows where the high-coverage data comes from, where coverage is low, and where it’s missing. It also helps us see which regions are well represented and which aren’t, so we know the limits of what we can analyse.
 
@@ -251,3 +264,6 @@ ggplot(coverage_by_region, aes(x = who_region, y = n_cities, fill = coverage_cat
 ```
 
 Most high-coverage cities are in Europe, with some in Southeast Asia and North America. This means the trends from high-coverage data mainly reflect European cities and aren’t representative of global air quality. Regions like Africa and the Eastern Mediterranean have very little data, so we can’t draw any conclusions there.
+
+# Conclusion 
+In this report, we explored global city air quality data from WHO. PM2.5 and PM10 are strongly correlated, while NO₂ shows a moderate correlation with both. Limiting data to cities with over 75% coverage doesn’t change these correlations much, but it removes outliers and reduces the dataset, making some early years, like 2010–2012, unreliable due to very few records and noticeable spikes. After 2013, pollutant levels show a steady decrease, with PM10 consistently the highest, followed by NO₂ and PM2.5. Coverage is uneven across regions and most high-coverage data comes from Europe, with some from North America, while Africa and the Eastern Mediterranean are greatly underrepresented. This means the trends mainly reflect well-covered regions like Europe, where pollution is decreasing due to legislation and other measures, but these patterns may not represent global trends.

@@ -25,5 +25,12 @@ The report takes the following structure:
 With html output of the Rmd content included for convenience.
 
 ## Description
-Our project yay
-Hello
+This project explores global air quality using the WHO Ambient Air Quality Database. Using R, we cleaned and analysed the data on three different types of pollutant concentrations across countries and cities worldwide. 
+
+We have:
+- Examined regional and population - based trends,
+- Explored correlations between pollutants,
+- Modelled pollution levels against potential covariates,
+- Used visualisations to highlight global patterns and data coverage differences.
+
+Our work demonstrates skills in data cleaning, exploration, visualisation and modelling in R within the context of enviromental data science. 
