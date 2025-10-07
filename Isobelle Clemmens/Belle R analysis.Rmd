@@ -28,6 +28,11 @@ df_amr <- data[data$who_region=='2_Amr',]
 df_sea <- data[data$who_region=='3_Sear',]
 summary(df_amr)
 ```
+
+```{r}
+summary(df_eu)
+```
+
 ```{r}
 # Count missing values in each column using sapply()
 regional_numeric <- numeric_df
@@ -53,30 +58,16 @@ wpr_nas <- (wpr_nas/nrow(regional_numeric[regional_numeric$who_region=='6_Wpr',]
 missing_vals <- data.frame(afr = afr_nas, amr = amr_nas, sear = sear_nas, eur = eur_nas, emr= emr_nas, wpr = wpr_nas)
 pm10 <- as.numeric(missing_vals[2,])
 pm25 <- as.numeric(missing_vals[3,])
+no2 <- as.numeric(missing_vals[4,])
 
 barplot(height = pm10, names.arg = colnames(missing_vals), xlab = "WHO Region", ylab = "Percentage of missing data", main = "pm10 concentration missing data")
 barplot(height = pm25, names.arg = colnames(missing_vals), xlab = "WHO Region", ylab = "Percentage of missing data", main = "pm25 concentration missing data")
+barplot(height = no2, names.arg = colnames(missing_vals), xlab = "WHO Region", ylab = "Percentage of missing data", main = "no2 concentration missing data")
 
 ```
-
 ```{r}
-library(reshape2)
-library(ggplot2)
-library(corrplot)
-# Melt the correlation matrix
-cor_matrix <- cor(numeric_df)
-pr
-melted_cor_matrix <- melt(cor_matrix)
 
-# Plot the correlation matrix using ggplot2
-ggplot(data = melted_cor_matrix, aes(x = Var1, y = Var2, fill = value)) +
-  geom_tile() +
-  scale_fill_gradient2(low = "red", high = "blue", mid = "white", 
-                       midpoint = 0, limit = c(-1,1), space = "Lab", 
-                       name="Correlation") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
-                                   size = 12, hjust = 1)) +
-  coord_fixed()
 ```
+
+
 
