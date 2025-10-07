@@ -7,36 +7,49 @@ date: "2025-10-01"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
+# Ambient Air quality dataset - EDA - Population size
 
 ```{r}
 library(ggplot2)
 library(dplyr)
+library(readxl)
 ```
 
-some things could explore-
+## Introduction 
+Some initial thoughts on what we can look at throughout this project
 
-- which cities have highest average AQI
+- which cities have highest average concentration
 - average level of year pollutant per year
--city /  country with cleanest air on average - could look at general trend here, are they more/less developed?- this knowledge of the countries would this be considered expert knowledge
+-city /  country / region with cleanest air on average - could look at general trend here, are they more/less developed?- would this knowledge of the countries be considered expert knowledge?
 
 
 looking at population specifically:
 how does air quality change as population increases,are different pollutants different in different pop sizes.
 
+## Cleaning the Dataset
 
-lets look at the dataset and clean the data set for each column: pm10_concentration, pm25_concentration, no2_concentration, population.
+lets look at the dataset
 ```{r}
-library(readxl)  # load the package
-
+  
 dataset <- read_excel("who_data.xlsx")
 
 dataset
+```
+
+Some definitions of our dataset that we are using.
+
+pm10_concentration - Annual mean concentration of particulate matter with diameter of 10 μm or less (µg/m3)
+pm25_concentration - Annual mean concentration of particulate matter with diameter of 2.5μm or less (µg/m3)
+no2_concentration - Annual mean concentration of nitrogen dioxide (µg/m3)
 
 
+
+
+As we can see from looking at the dataset, lots of the rows we have some missing values. So we will clean the data set for each column: pm10_concentration, pm25_concentration, no2_concentration, population as well as all of these at once since when we do this we will have less data points to analyse - this will be something to think about later: do we clean the whole data or just for specific columns?
+```{r}
 dataset[dataset == "NA"] <- NA
 
-
+# cleaning the data for specific columns and making the values numbers instead of characters which they currently are.
 clean_data_pm10 <- dataset[!is.na(dataset$pm10_concentration), ] %>%
   mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
                 as.numeric))
@@ -49,7 +62,7 @@ clean_data_no2 <- dataset[!is.na(dataset$no2_concentration), ] %>%
 clean_data_pop <- dataset[!is.na(dataset$population), ] %>%
   mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
                 as.numeric))
-
+# cleaning every column we are using
 clean_data_all <- dataset[
   !is.na(dataset$population) &
   !is.na(dataset$no2_concentration) &
@@ -59,7 +72,7 @@ clean_data_all <- dataset[
   mutate(across(c(no2_concentration, pm25_concentration, pm10_concentration, population),
                 as.numeric))
 
-# lets also clean the data for one concentration and population so we will have more data points when we visulise the data in the graph
+# lets also clean the data for one concentration and population so we will have more data points when we visualise the data in the graph
 
 clean_data_pm10_pop <- dataset[
   !is.na(dataset$population) &
@@ -85,38 +98,54 @@ clean_data_no2_pop <- dataset[
 ```
 
 lets calculate some average values of columns
- 
+
 ```{r}
-mean(clean_data_pm10$pm10_concentration)
-mean(clean_data_pm25$pm25_concentration)
-mean(clean_data_no2$no2_concentration)
-mean(clean_data_pop$population)
+library(tibble)
 
+comparison_table <- tibble(
+  Dataset = c("PM10 Cleaned", "PM2.5 Cleaned", "NO2 Cleaned", "Population Cleaned",
+              "All Cleaned (PM10, PM2.5, NO2, Pop)"),
+  Mean_PM10 = c(mean(clean_data_pm10$pm10_concentration, na.rm = TRUE),
+                NA, NA,
+                NA,
+                mean(clean_data_all$pm10_concentration, na.rm = TRUE)),
+  Mean_PM25 = c(NA,
+                mean(clean_data_pm25$pm25_concentration, na.rm = TRUE),
+                NA,
+                NA,
+                mean(clean_data_all$pm25_concentration, na.rm = TRUE)),
+  Mean_NO2 = c(NA, NA,
+               mean(clean_data_no2$no2_concentration, na.rm = TRUE),
+               NA,
+               mean(clean_data_all$no2_concentration, na.rm = TRUE)),
+  Mean_Population = c(NA, NA, NA,
+                      mean(clean_data_pop$population, na.rm = TRUE),
+                      mean(clean_data_all$population, na.rm = TRUE))
+)
 
-#see how the averages change when we use the cleaned data for all the columns- so here we have much less data.
-mean(clean_data_all$pm10_concentration)
-mean(clean_data_all$pm25_concentration)
-mean(clean_data_all$no2_concentration)
-mean(clean_data_all$population)
+comparison_table
+
 ```
+This table has highlighted how much some of our averages change when we take different versions of the cleaned data, the values are still similar for pm10 concentration but we see quite a big different for pm25 and no2 concentration.
 
+## Population vs Concentration Visulisation
 
-for the first bit of analysis lets use the fully cleaned data.
+For the first section of analysis lets use the fully cleaned data.
 ```{r}
 ggplot(data=clean_data_all, aes(x = population, y = pm10_concentration, colour = year)) + geom_point()
 ggplot(data=clean_data_all, aes(x = population, y = pm25_concentration, colour = year)) + geom_point()
 ggplot(data =clean_data_all, aes(x = population, y = no2_concentration, colour = year)) + geom_point()
 ```
-cant really see much of a trend here. this might be because we have such a spread in the size of the populations, perhaps taking the log of the population will help see the trend
+We can't really see much of a trend here. This might be because we have such a spread in the size of the populations, perhaps taking the log of the population will help see the trend.
 
 
 
 ```{r}
-ggplot(data=clean_data_all, aes(x = population, y = pm10_concentration, colour = year)) + geom_point() + scale_x_log10() + geom_smooth(method = 'loess', color = 'red')
-ggplot(data=clean_data_all, aes(x = population, y = pm25_concentration, colour = year)) + geom_point() + scale_x_log10() + geom_smooth(method = 'loess', color = 'red')
-ggplot(data =clean_data_all, aes(x = population, y = no2_concentration, colour = year)) + geom_point() + scale_x_log10() + geom_smooth(method = 'loess', color = 'red')
+ggplot(data=clean_data_all, aes(x = population, y = pm10_concentration, colour = year)) + geom_point() + scale_x_log10() + geom_smooth(method = 'loess', color = 'red') + geom_smooth(method = 'lm', color = 'green') 
+ggplot(data=clean_data_all, aes(x = population, y = pm25_concentration, colour = year)) + geom_point() + scale_x_log10() + geom_smooth(method = 'loess', color = 'red') + geom_smooth(method = 'lm', color = 'green')
+ggplot(data =clean_data_all, aes(x = population, y = no2_concentration, colour = year)) + geom_point() + scale_x_log10() + geom_smooth(method = 'loess', color = 'red') + geom_smooth(method = 'lm', color = 'green')
 ```
-this has helped us visualise the trend, 
+Now we can see a trend in the data- for all the concentrations as the population size increases the concentration increases. This is something we would have expected as a higher population would mean more waste and pollution and hence worse air quality.
 
 
 lets compare these two models
@@ -131,8 +160,8 @@ summary(model1)
 summary(model_log)
 
 ```
-
-R^2 is lower for log model which suggests its actually a worse model which is the opposite of what we thoght when looking at the graphs.
+Here $ R^2$ is lower for the log model which suggests its actually a worse model which is the opposite of what we thought when looking at the graphs.
+For the next two models:
 ```{r}
 # Linear model (no transformation)
 model2 <- lm(pm10_concentration ~ population, data = clean_data_all)
@@ -154,25 +183,21 @@ summary(model3_log)
 
 
 ```
-for NO2 con and pm10 concentration the R^2 is higher for the log model suggesting the log relationship is a better model, this is what we expected from looking at the two different graphs
+for NO2 concentration and pm10 concentration the $ R^2$ is higher for the log model suggesting the log relationship is a better model, this is what we expected from looking at the two different graphs.
 
 
-lets take a look at just the data in a specific year.
-
-
-
-
-
+lets take a look at just the data in a specific year. Here we have used the cleaned data wiht only one concentration column cleaned and the population cleaned as otherwise we will have a lot less data points
 
 
 ```{r}
 
 clean_data_pm10_pop_2021 <- clean_data_pm10_pop %>% filter(year == '2021')
 
-
 ggplot(clean_data_pm10_pop_2021, aes(x = population, y= pm10_concentration)) + geom_point()
 
 ggplot(clean_data_pm10_pop_2021, aes(x = population, y= pm10_concentration)) + geom_point() + scale_x_log10() + geom_smooth( method = 'loess' , color = 'red' )
+
+
 
 ##
 
@@ -184,7 +209,7 @@ ggplot(clean_data_pm25_pop_2021, aes(x = population, y= pm25_concentration)) + g
 
 ggplot(clean_data_pm25_pop_2021, aes(x = population, y= pm25_concentration)) + geom_point() + scale_x_log10() + geom_smooth( method = 'loess' , color = 'red' )
 
-
+##
 
 clean_data_no2_pop_2021 <- clean_data_no2_pop %>% filter(year == '2021')
 
@@ -195,10 +220,11 @@ ggplot(clean_data_no2_pop_2021, aes(x = population, y= no2_concentration)) + geo
 
 ```
 
-Now we only have the concentrations for a specific year the trend here doesnt appear to be as obvious.
+Now we only have the concentrations for a specific year the trend here doesn't appear to be as obvious. We can see a trend in the no2 concentration similar to that previously.
+
+## Visualising the concentration on a world map
 
 
-adding the concentration to a world map
 ```{r}
 
 library(sf)
@@ -224,7 +250,7 @@ ggplot(data = map_data_2021_pm10) +
   geom_sf(aes(fill = pm10_concentration)) +
   scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
   theme_minimal() +
-  labs(fill = "PM10 (µg/m³)",
+  labs(fill = "PM10",
        title = "Average PM10 Concentration by Country (2021)")
 ####
 
@@ -240,7 +266,7 @@ ggplot(data = map_data_2021_pm25) +
   geom_sf(aes(fill = pm25_concentration)) +
   scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
   theme_minimal() +
-  labs(fill = "PM25 (µg/m³)",
+  labs(fill = "PM25",
        title = "Average PM25 Concentration by Country (2021)")
 
 
@@ -251,7 +277,7 @@ ggplot(data = map_data_2021_pm25) +
 
 
 
-not the best way to visulise the data as we have a lot of unfilled countries, looking at another year to check.
+not the best way to visualise the data as we have a lot of unfilled countries, looking at another year to check.
 
 
 
@@ -270,7 +296,7 @@ ggplot(data = map_data_2019_pm10) +
   geom_sf(aes(fill = pm10_concentration)) +
   scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
   theme_minimal() +
-  labs(fill = "PM10 (µg/m³)",
+  labs(fill = "PM10",
        title = "Average PM10 Concentration by Country (2019)")
 ####
 
@@ -286,10 +312,25 @@ ggplot(data = map_data_2019_pm25) +
   geom_sf(aes(fill = pm25_concentration)) +
   scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
   theme_minimal() +
-  labs(fill = "PM25 (µg/m³)",
+  labs(fill = "PM25",
        title = "Average PM25 Concentration by Country (2019)")
 
+##
+# Calculate average NO2 per country for 2019
+country_avg_no2_2019 <- clean_data_no2 %>%
+  filter(year == 2019) %>%
+  group_by(iso3) %>%
+  summarise(no2_concentration = mean(no2_concentration, na.rm = TRUE))
 
+map_data_2019_no2 <- world %>%
+  left_join(country_avg_no2_2019, by = c("iso_a3" = "iso3"))
+
+ggplot(data = map_data_2019_no2) +
+  geom_sf(aes(fill = no2_concentration)) +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey90") +
+  theme_minimal() +
+  labs(fill = "no2",
+       title = "Average no2 Concentration by Country (2019)")
 ```
-
+From the map of pm10 and pm25 concentrations in 2019 it appears that there are higher concentrations of particle matter in Asia.
 
