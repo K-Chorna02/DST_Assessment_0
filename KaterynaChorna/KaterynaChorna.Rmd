@@ -1,5 +1,5 @@
 ---
-title: "Using Global City Air Quality Data from WHO"
+title: "Using Global City Air Quality Data "
 author: "Kateryna Chorna"
 output:
   html_document:

@@ -1,11 +1,15 @@
 ---
 title: "Final_report"
-author: "Minnie, Belle, Kat , Jemma, Gracie"
+author: "Minnie, Belle, Kateryna , Jemma, Gracie"
 date: "2025-10-06"
-output: html_document
+output:
+  html_document:
+    toc: true
+    theme: united
+    number_sections: true
 ---
 
-# 1. Introduction
+# Introduction
 
 Throughout this project, we explore data relevant to environmental health analysis, focusing on air pollution data from the World Health Organisation. This information can be particularly relevant when identifying areas with high pollutants, trends in pollutant concentrations over time and relationships between pollutants. By exploring this data, we hope to gain an insight into some of these trends, which in a real life scenario could contribute to research in policy making to address these issues.
 We perform a literature review of resources for helping us analyse our data set, alongside using our own knowledge of EDA and exploring built in R packages. 
@@ -78,28 +82,6 @@ Firstly, we notice a very large range for variables such as no2 concentration. W
 A good approach to deal with the large ranges is to scale the data, for example, using a log transformation, or we could identify some as outliers and cap the values.
 We also notice a large number of NA values for each category. We could remove missing data and cap values to avoid extreme outliers, but we might not want to dismiss all the missing data as we could accidentally introduce bias.
 
-# R part of assessment
-
-## Overview 
-Our project is composed of 5 sections, each using different methods of EDA to explore how different variables affect our data. 
-
-- Section 1: Linear regression models
-
-
-- Section 2 : Population
-
-
-- Section 3: Time-series by country
-
-
-- Section 4: City
-
-
-- Section 5: 
-
-
--Conclusion 
-
 
 ## Library requirements 
 In order to run our code, the following libraries are required: 
@@ -131,7 +113,7 @@ library(tidyr)
 ```
 
 
-# Section 1: Linear regression models
+# Section: Linear regression models
 
 In this first section of our exploratory analysis, we investigate **air pollution levels** across different cities and areas, focusing on the three main pollutants: 
 **PM_2.5**, **PM_10**, and **NO_2**.\
@@ -175,7 +157,7 @@ $$
 
 where $$\varepsilon_i \sim N(0, \sigma^2)$$ represents the error term.
 
-## 2. Initial Model Fitting for PM₂.₅ Concentration
+## Initial Model Fitting for PM₂.₅ Concentration
 
 Now the data has been cleaned, it is ready for modelling. We start with
 response varibable **Y1 = pm25_concentration**:
@@ -235,7 +217,7 @@ The estimated coefficients can be interpreted as follows:
 Thus, we can see that important predictors are missing. Our next step is to try and and tidy up the predictor *type_of_stations* so we can include it in our analysis.
   
 
-## 3. Extending the Model with type_of_station as a Numeric Predictor
+## Extending the Model with type_of_station as a Numeric Predictor
 
 To resolve this issue of multiple location types for one city, we need to force each observation into one category. As an attempt to do this, we will quantify station type by giving it a numeric"population density score", then taking the average if a city has multiple categories.
 
@@ -298,7 +280,7 @@ However, air pollution is also strongly influenced by **geography and regional p
 
 To account for this, we now introduce **regional and country-level effects** into the model. 
 
-## 4. Extending the Model with Who_region
+## Extending the Model with Who_region
 
 Pollution levels could be heavily shaped by **geography and policy**, so adding
 a factor for country or region will likely explain more variation.
@@ -368,7 +350,7 @@ contextual factors in the analysis.
 Although the $R^2$ value is still extremely low, this model provides the best fit among the three tested so far.  
 We will therefore use this specification to train the next two response variables, **Y_2 = PM₁₀** and **Y_3 = NO₂**.
 
-## 5. Applying the Model to Y_2 = PM_10 Concentration
+## Applying the Model to Y_2 = PM_10 Concentration
 
 Next, we apply the same linear model specification used for **PM_2.5** to the **PM_10** data.  
 This allows us to assess whether the same predictors — **population**, **year**, **station_rank**, and **WHO_region**, also explain variation in **PM_10** concentrations.
@@ -412,7 +394,7 @@ These estimated coefficients can be interpreted as follows:
     This model explains about 14% of the variation in PM_10 concentrations — higher than what was           explained for pm_25, but still indicating that additional factors likely influence air quality.
     
 
-## 6. Applying the model to Y_3 = N0_2 Concentration 
+## Applying the model to Y_3 = N0_2 Concentration 
 
 Finally, we apply the same linear model specification used for **PM_2.5** and **PM_10** to the **NO_2** data.  
 This allows us to test whether the same predictors **population**, **year**, **station rank**, and **WHO region** — also explain variation in **NO₂ concentrations** across cities and regions.
@@ -457,7 +439,7 @@ These estimated coefficients can be interpreted as follows:
 -   **Model fit**: The coefficient of determination is $R^2 \approx 0.239$.\
     This model explains about 24% of the variation in NO₂ concentrations — the highest explanatory power     among the three models, suggesting that NO₂ levels are more strongly linked to population size,          urbanisation, and regional context.
 
-## 7. Conclusion 
+## Conclusion 
 
 To conclude our section on linear regression, our exploratory analysis investigated how **population size**, **time**, **station type**, and **regional factors** influence air pollution levels across cities.  
 Across all three pollutants, **PM_2.5**, **PM_10**, and **NO_10**,population and urbanisation emerged as strong, statistically significant predictors of higher pollution.  
@@ -476,13 +458,13 @@ Similarly, we could consider exploring non-linear relationships. This could incl
 
 
 
-# Section 2: Population size 
+# Section: Population size 
 
 Throughout this section we will explore the population variable and the impact it has on others. We will look at:
 - how does air quality change as population increases
 - are different pollutants different in different pop sizes.- in diff pop brackets what is the average con for each pollutant.
 
-## 1.Cleaning the Dataset
+## Cleaning the Dataset
 For section 2, we took a different approach to cleaning the variables- we cleaned the data set for each column: pm10_concentration, pm25_concentration, no2_concentration, population as well as all of these at once since when we do this we will have less data points to analyse - this will be something to think about later: do we clean the whole data or just for specific columns?
 
 Note: we have used the 'pop' suffix to indicate this applies to data for Section 2. 
@@ -541,7 +523,7 @@ summary(clean_data_all_pop$population)
 
 To see how the concentration of pollutants changes for different populations we turn the population into a categorical variable making different population brackets. We have set the population brackets below based on the spread of the population provided by the summary above.
 
-## 2. Categorical variables
+## Categorical variables
 
 ```{r categorical vars}
 dataset_popbrackets <- clean_data_all_pop %>%
@@ -591,7 +573,7 @@ ggplot(avg_con_long, aes(x = pop_bracket, y = avg_concentration, fill = concentr
 From the graph we can see that as the population size increases the average concentration of pollutant increases.
 
 
-## 3. Population vs Concentration Visulisation
+## Population vs Concentration Visulisation
 
 Lets use the fully cleaned data.
 ```{r}
@@ -601,7 +583,7 @@ ggplot(data =clean_data_all_pop, aes(x = population, y = no2_concentration, colo
 ```
 We can't really see much of a trend here. This might be because we have such a spread in the size of the populations, perhaps by transforming, e.g. taking the log of the population, this will help us see the trend.
 
-## 4. Transformed data
+## Transformed data
 
 ```{r}
 ggplot(data=clean_data_all_pop, aes(x = population, y = pm10_concentration, colour = year)) + geom_point() + scale_x_log10() + geom_smooth(method = 'loess', color = 'red') + geom_smooth(method = 'lm', color = 'green') 
@@ -610,7 +592,7 @@ ggplot(data =clean_data_all_pop, aes(x = population, y = no2_concentration, colo
 ```
 Now we can see a trend in the data- for all the concentrations as the population size increases the concentration increases. This is something we would have expected as a higher population would mean more waste and pollution and hence worse air quality.
 
-## 5. Comparing models
+## Comparing models
 ```{r}
 # Linear model - same as above
 model1 <- lm(pm25_concentration ~ population, data = clean_data_all_pop)
@@ -647,15 +629,15 @@ summary(model3_log)
 
 for NO2 concentration and pm10 concentration the $ R^2$ is higher for the log model suggesting the log relationship is a better model, this is what we expected from looking at the two different graphs.
 
-## 6. Conclusion
+## Conclusion
 
 
 
 
-# Section 3: Time series and NA analysis
+# Section: Time series and NA analysis
 In this section we explore how the concentration changes over time for each country. The aim of this exploration was to identify trends that we would potentially be able to use for further analysis. We also focus on the missing values and explore the trends in missing data. 
 
-## 1. Dealing with missing data
+## Dealing with missing data
 Evidently missing data creates some issues, but ths can be treated as a point of exploration. We explore to see if there is a trend in missing data, e.g. one country has more missing data than another, to do so we identify *How many NA's in pm10, pm25 and no2 for each country?* This way we can decide which countries to focus on for our analysis.
 We begin by exploring the NA counts for pm10. After looking at the summary for the data, we have decided to look at countries that have over 500 data entries and of these, less than 30% of them are NAs.
 ```{r NA counts pm10} 
@@ -695,7 +677,7 @@ who_data %>%
 Using this information regarding missing values, we want to use the top 10 most relevant countries, or rather the countries with the highest proportion of usable data in our analysis. 
 For the pm10 analysis we had to decide between what was more important, having a higher count rate but smaller proportion, or having less missing values with less data. We concluded that having more data would be significant in representing each country.
 
-# 2. Creating subsets based on missing data 
+## Creating subsets based on missing data 
 ```{r most relevant } 
 pm10_top_10= who_data %>%
   filter(country_name %in%
@@ -713,7 +695,7 @@ c("Austria","Belgium","France","Bulgaria","Germany","Czechia","Italy","Sweden","
 
 Here we manually selected the 10 most relevant countries, or 8 in the case of pm25. Interestingly for pm10 and no2 data, the countries with the least missing data were mostly in Europe, whereas for pm25 data, these were from other countries. 
 
-## 3. Time series 
+## Time series 
 Now it is time to use this data to explore the relationship between country and particle matter concentrations over time. Below we have created a time series plot for concentrtions of pm10 in Germany. 
 
 ```{r pm10 Germany} 
@@ -770,7 +752,7 @@ no2_top_10 %>%
 
 From this we can see there is a clear downward sloping linear trend in most countries. Interestingly 2011 seems to provide missingdata for most countries, so perhaps we could only focus on years from 2011 onwards in our analysis. 
 
-## 4. Built in R packages 
+## Built in R packages 
 
 To further explore the relationshp between time and concentration between country, we decided to explore built in packages in RStudio and see which were relevant to our project. After careful research, we came across the "openair" package, which is particularly relevant to air pollutant data. 
 Carslaw, D. C., & Ropkins, K. (2012). openair — An R package for air quality data analysis.
@@ -778,7 +760,7 @@ Environmental Modelling & Software, 27–28, 52–61. https://doi.org/10.1016/j.
 
 Included in this package is TimePlot, which we decided to use to compare to our scatter plots. 
 
-# 7. pm10 Time series by country
+## pm10 Time series by country
 ```{r openair}
 #install.packages("openair")
 library(openair)
@@ -803,7 +785,7 @@ timePlot(data_openair_country,pollutant = c("pm25", "pm10", "no2"),
 ```
 This creates a very clear visualisation of all 3 particle matter types, though the scale is harder to read, I believe these provide a clear insight into the trends, which are obviously negatively correlated. 
 
-# 7. pm25 Time series by country
+## pm25 Time series by country
 ```{r pm25 openair}
 library(openair)
 library(dplyr)
@@ -827,7 +809,7 @@ timePlot(data_openair_country,
 ```
 
 
-# 7. NO2 Time series by country
+## NO2 Time series by country
 ```{r no2 openair}
 library(openair)
 library(dplyr)
@@ -851,13 +833,13 @@ timePlot(data_openair_country,
          main = "Time series by country No2")
 ```
 
-# 8. Conclusion
+## Conclusion
 
 After extensive exploration of our data, we can conclude that there is a general decline in pollutant concentrations over time in most European countries (from 2015 onwards). We explored 2 different methods when creating time plots, by using ggplot and by using built in R packages. 
 The ggplots were easier to read when picking out key information such as year and specific concentration. However for exploring trends, openair was very useful as it provided a clear visual representation of all concentrations- making it easy to compare between countries and across different particle types.
 
 
-# Section 4 : City
+# Section: Polutant concentration and coverage 
 
 For this section of the project, we focus on using the city variable. We : 
 -  Explore correlations between PM2.5, PM10, and NO₂.\
@@ -865,7 +847,7 @@ For this section of the project, we focus on using the city variable. We :
 -   Explore trends in pollutant levels over time.
 -   Investigate how data coverage affects these trends.
 
-## 1. Correlation between PM2.5, PM10, and NO₂
+## Correlation between PM2.5, PM10, and NO₂
 
 ```{r}
 corr_matrix <- cor(who_data[, c("pm25_concentration","pm10_concentration","no2_concentration")],
@@ -909,7 +891,7 @@ pairs(data_highcov[, c("pm25_concentration","pm10_concentration","no2_concentrat
 
 After restricting to cities with at least 75% annual coverage, PM2.5 and PM10 remain strongly positively correlated (r ≈ 0.82). Correlations with NO₂ are moderate (\~0.43). The slight reduction in correlation reflects the removal of extreme values, making these estimates more reliable.
 
-# 3. Concentration over time by city
+## Concentration over time by city
 
 We calculate the average concentration per year for PM2.5, PM10, and NO2 using all available data. This shows overall trends in air quality over time and lets us compare pollutants. Averages ignore missing values, so each year reflects the data that’s actually recorded.
 
@@ -1036,7 +1018,7 @@ kable(summary_table,
 
 For years 2011 and 2012, there are only 1–2 records available. This makes the average concentrations for those years highly unreliable.
 
-# 4.Coverage by region
+## Coverage by region
 
 Now we look at how data coverage is spread across regions. This shows where the high-coverage data comes from, where coverage is low, and where it’s missing. It also helps us see which regions are well represented and which aren’t, so we know the limits of what we can analyse.
 
@@ -1070,8 +1052,10 @@ ggplot(coverage_by_region, aes(x = who_region, y = n_cities, fill = coverage_cat
 ```
 
 Most high-coverage cities are in Europe, with some in Southeast Asia and North America. This means the trends from high-coverage data mainly reflect European cities and aren’t representative of global air quality. Regions like Africa and the Eastern Mediterranean have very little data, so we can’t draw any conclusions there.
-
-# 5. Conclusion 
+## Conclusion 
+Here explored global city air quality data from WHO. PM2.5 and PM10 are strongly correlated, while NO₂ shows a moderate correlation with both. Limiting data to cities with over 75% coverage doesn’t change these correlations much, but it removes outliers and reduces the dataset, making some early years, like 2010–2012, unreliable due to very few records and noticeable spikes. After 2013, pollutant levels show a steady decrease, with PM10 consistently the highest, followed by NO₂ and PM2.5. Coverage is uneven across regions and most high-coverage data comes from Europe, with some from North America, while Africa and the Eastern Mediterranean are greatly underrepresented. This means the trends mainly reflect well-covered regions like Europe, where pollution is decreasing due to legislation and other measures, but these patterns may not represent global trends.
+# Section: Belle
+# Section: Conclusion 
 
 
 
