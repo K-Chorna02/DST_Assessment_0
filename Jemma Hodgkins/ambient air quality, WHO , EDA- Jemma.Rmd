@@ -169,7 +169,6 @@ model2_log <- lm(pm10_concentration ~ log10(population), data = clean_data_all)
 summary(model2)
 summary(model2_log)
 
-
 # Linear model - same as above
 model3 <- lm(no2_concentration ~ population, data = clean_data_all)
 
