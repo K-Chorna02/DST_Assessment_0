@@ -149,7 +149,7 @@ Now we can see a trend in the data- for all the concentrations as the population
 
 lets compare these two models
 ```{r}
-# Linear model (no transformation)
+# Linear model - same as above
 model1 <- lm(pm25_concentration ~ population, data = clean_data_all)
 
 # Log-transformed model
@@ -157,12 +157,11 @@ model_log <- lm(pm25_concentration ~ log10(population), data = clean_data_all)
 
 summary(model1)
 summary(model_log)
-
 ```
 Here $ R^2$ is lower for the log model which suggests its actually a worse model which is the opposite of what we thought when looking at the graphs.
 For the next two models:
 ```{r}
-# Linear model (no transformation)
+# Linear model- same as above
 model2 <- lm(pm10_concentration ~ population, data = clean_data_all)
 
 # Log-transformed model
@@ -171,7 +170,7 @@ model2_log <- lm(pm10_concentration ~ log10(population), data = clean_data_all)
 summary(model2)
 summary(model2_log)
 
-# Linear model (no transformation)
+# Linear model - same as above
 model3 <- lm(no2_concentration ~ population, data = clean_data_all)
 
 # Log-transformed model
@@ -179,8 +178,6 @@ model3_log <- lm(no2_concentration ~ log10(population), data = clean_data_all)
 
 summary(model3)
 summary(model3_log)
-
-
 ```
 for NO2 concentration and pm10 concentration the $ R^2$ is higher for the log model suggesting the log relationship is a better model, this is what we expected from looking at the two different graphs.
 
