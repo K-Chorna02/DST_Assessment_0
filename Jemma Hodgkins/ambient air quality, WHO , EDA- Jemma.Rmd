@@ -187,20 +187,15 @@ lets take a look at just the data in a specific year. Here we have used the clea
 
 
 ```{r}
-
 clean_data_pm10_pop_2021 <- clean_data_pm10_pop %>% filter(year == '2021')
 
 ggplot(clean_data_pm10_pop_2021, aes(x = population, y= pm10_concentration)) + geom_point()
 
 ggplot(clean_data_pm10_pop_2021, aes(x = population, y= pm10_concentration)) + geom_point() + scale_x_log10() + geom_smooth( method = 'loess' , color = 'red' )
 
-
-
 ##
 
-
 clean_data_pm25_pop_2021 <- clean_data_pm25_pop %>% filter(year == '2021')
-
 
 ggplot(clean_data_pm25_pop_2021, aes(x = population, y= pm25_concentration)) + geom_point()
 
@@ -210,11 +205,9 @@ ggplot(clean_data_pm25_pop_2021, aes(x = population, y= pm25_concentration)) + g
 
 clean_data_no2_pop_2021 <- clean_data_no2_pop %>% filter(year == '2021')
 
-
 ggplot(clean_data_no2_pop_2021, aes(x = population, y= no2_concentration)) + geom_point()
 
 ggplot(clean_data_no2_pop_2021, aes(x = population, y= no2_concentration)) + geom_point() + scale_x_log10() + geom_smooth( method = 'loess' , color = 'red' )
-
 ```
 
 Now we only have the concentrations for a specific year the trend here doesn't appear to be as obvious. We can see a trend in the no2 concentration similar to that previously.
