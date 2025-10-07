@@ -214,11 +214,9 @@ Now we only have the concentrations for a specific year the trend here doesn't a
 
 
 ```{r}
-
 library(sf)
 library(rnaturalearth)
 library(rnaturalearthdata)
-
 ```
 
 ```{r}
