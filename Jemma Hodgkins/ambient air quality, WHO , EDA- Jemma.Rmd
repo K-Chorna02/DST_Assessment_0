@@ -7,29 +7,32 @@ date: "2025-10-01"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
 # Ambient Air quality dataset - EDA - Population size
 
 ```{r}
+if(!require("ggplot2")) install.packages("ggplot2")
+if(!require("dplyr")) install.packages("dplyr")
+if(!require("readxl")) install.packages("readxl")
+if(!require("tibble")) install.packages("tibble")
+if(!require("sf")) install.packages("sf")
+if(!require("rnaturalearth")) install.packages("rnaturalearth")
+if(!require("rnaturalearthdata")) install.packages("rnaturalearthdata")
+
 library(ggplot2)
 library(dplyr)
 library(readxl)
 ```
 
 ## Introduction 
-Some initial thoughts on what we can look at throughout this project
+Some initial thoughts on what we can look at throughout this project specifically on population
 
-- which cities have highest average concentration
-- average level of year pollutant per year
--city /  country / region with cleanest air on average - could look at general trend here, are they more/less developed?- would this knowledge of the countries be considered expert knowledge?
-
-
-looking at population specifically:
-how does air quality change as population increases,are different pollutants different in different pop sizes.
+- how does air quality change as population increases
+- are different pollutants different in different pop sizes.- in diff pop brackets what is the average con for each pollutant.
 
 ## Cleaning the Dataset
 lets look at the dataset
 ```{r}
-  
 dataset <- read_excel("who_data.xlsx")
 dataset
 ```
@@ -125,9 +128,68 @@ comparison_table
 ```
 This table has highlighted how much some of our averages change when we take different versions of the cleaned data, the values are still similar for pm10 concentration but we see quite a big different for pm25 and no2 concentration.
 
+```{r}
+summary(clean_data_all$population)
+```
+
+
+
+To see how the concentration of pollutants changes for different populations we turn the population into a categorical variable making different population brackets. We have set the population brackets below based on the spread of the population provided by the summary above.
+
+
+```{r}
+dataset_popbrackets <- clean_data_all %>%
+  mutate(pop_bracket = case_when( # create categorical groups, create a new column pop_bracket which assigns the population into the categorical sections
+    population < 100000 ~ "<100K",
+    population < 250000 ~ "100K–250K",
+    population < 1000000 ~ "250K–1M",
+    population < 5000000 ~ "1M–5M",
+    TRUE ~ ">5M"
+  ))
+
+
+avg_con <- dataset_popbrackets %>%
+  group_by(pop_bracket) %>%
+  summarise(
+    mean_pm25 = mean(pm25_concentration, na.rm = TRUE), # will calculate for each pop bracket 
+    mean_pm10 = mean(pm10_concentration, na.rm = TRUE),
+    mean_no2 = mean(no2_concentration, na.rm = TRUE)
+  )
+
+
+library(tidyr)
+library(ggplot2)
+
+
+avg_con_long <- avg_con %>%
+  pivot_longer(cols = starts_with("mean_"), # changing data format
+               names_to = "concentration",
+               values_to = "avg_concentration") %>%
+  mutate(concentration = recode(concentration,
+                            "mean_pm25" = "PM2.5",
+                            "mean_pm10" = "PM10",
+                            "mean_no2" = "NO₂"),
+         pop_bracket = factor(pop_bracket,
+                              levels = c("<100K", "100K–250K", "250K–1M", "1M–5M", ">5M"))) #orders the x-axis numerically
+
+
+ggplot(avg_con_long, aes(x = pop_bracket, y = avg_concentration, fill = concentration)) +
+  geom_col(position = "dodge") +
+  labs(title = "Average Pollutant Concentration by Population Bracket",
+       x = "Population Bracket",
+       y = "Average Concentration ",
+       fill = "concentration") +
+  theme_minimal()
+
+
+```
+
+So from the graph we can see that as the population size increases the average concentration of pollutant increases.
+
+
 ## Population vs Concentration Visulisation
 
-For the first section of analysis lets use the fully cleaned data.
+Lets use the fully cleaned data.
 ```{r}
 ggplot(data=clean_data_all, aes(x = population, y = pm10_concentration, colour = year)) + geom_point()
 ggplot(data=clean_data_all, aes(x = population, y = pm25_concentration, colour = year)) + geom_point()
@@ -180,7 +242,7 @@ summary(model3_log)
 for NO2 concentration and pm10 concentration the $ R^2$ is higher for the log model suggesting the log relationship is a better model, this is what we expected from looking at the two different graphs.
 
 
-lets take a look at just the data in a specific year. Here we have used the cleaned data wiht only one concentration column cleaned and the population cleaned as otherwise we will have a lot less data points
+lets take a look at just the data in a specific year. Here we have used the cleaned data with only one concentration column cleaned and the population cleaned as otherwise we will have a lot less data points
 
 
 ```{r}
