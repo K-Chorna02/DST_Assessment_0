@@ -33,7 +33,14 @@ Some initial thoughts on what we can look at throughout this project specificall
 ## Cleaning the Dataset
 lets look at the dataset
 ```{r}
-dataset <- read_excel("who_data.xlsx")
+
+library(readr)
+dataset <- read_csv("who_data.csv")
+View(dataset)
+
+#dataset <- read_excel("who_data.xlsx")
+
+
 dataset
 ```
 
