@@ -98,6 +98,7 @@ if(!require("rnaturalearth")) install.packages("rnaturalearth")
 if(!require("rnaturalearthdata")) install.packages("rnaturalearthdata")
 if(!require("gplots")) install.packages("gplots")
 if(!require("kableExtra")) install.packages("kableExtra")
+if(!require("openair")) install.packages("openair")
 
 
 
@@ -110,6 +111,7 @@ library(gplots)
 library(readr)
 library(kableExtra)
 library(tidyr)
+library(openair)
 
 
 
