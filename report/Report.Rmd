@@ -100,6 +100,8 @@ if(!require("gplots")) install.packages("gplots")
 if(!require("kableExtra")) install.packages("kableExtra")
 
 
+
+
 #We load the libraries we will need throughout the project:
 library(readxl)
 library(dplyr)
@@ -108,6 +110,7 @@ library(gplots)
 library(readr)
 library(kableExtra)
 library(tidyr)
+
 
 
 ```
