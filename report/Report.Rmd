@@ -538,15 +538,6 @@ dataset_popbrackets <- clean_data_all_pop %>%
 
 ```{r}
 
-dataset_popbrackets <- clean_data_all %>%
-  mutate(pop_bracket = case_when( # create categorical groups, create a new column pop_bracket which assigns the population into the categorical sections
-    population < 100000 ~ "<100K",
-    population < 250000 ~ "100K–250K",
-    population < 1000000 ~ "250K–1M",
-    population < 5000000 ~ "1M–5M",
-    TRUE ~ ">5M"
-  ))
-
 avg_con <- dataset_popbrackets %>%
   group_by(pop_bracket) %>%
   summarise(
