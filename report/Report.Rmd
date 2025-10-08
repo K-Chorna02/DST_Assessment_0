@@ -1066,8 +1066,67 @@ ggplot(coverage_by_region, aes(x = who_region, y = n_cities, fill = coverage_cat
 Most high-coverage cities are in Europe, with some in Southeast Asia and North America. This means the trends from high-coverage data mainly reflect European cities and aren’t representative of global air quality. Regions like Africa and the Eastern Mediterranean have very little data, so we can’t draw any conclusions there.
 ## Conclusion 
 Here explored global city air quality data from WHO. PM2.5 and PM10 are strongly correlated, while NO₂ shows a moderate correlation with both. Limiting data to cities with over 75% coverage doesn’t change these correlations much, but it removes outliers and reduces the dataset, making some early years, like 2010–2012, unreliable due to very few records and noticeable spikes. After 2013, pollutant levels show a steady decrease, with PM10 consistently the highest, followed by NO₂ and PM2.5. Coverage is uneven across regions and most high-coverage data comes from Europe, with some from North America, while Africa and the Eastern Mediterranean are greatly underrepresented. This means the trends mainly reflect well-covered regions like Europe, where pollution is decreasing due to legislation and other measures, but these patterns may not represent global trends.
-# Section: Belle
-# Section: Conclusion 
+
+#Section: Analysis by Region
+
+This section looks explores the dataset grouped the the WHO defined 'regions' which are: 
+-Africa
+-The Americas
+-South East Asia region
+-Europe
+-East Mediterranean region
+-West Pacific region
+
+```{r}
+numeric_df <- data[sapply(data,is.numeric)]#separating numeric columns
+#Separating the data into regions
+df_eu <- data[data$who_region=='4_Eur',]
+df_amr <- data[data$who_region=='2_Amr',]
+summary(df_amr)
+```
+```{r}
+summary(df_eu)
+```
+
+At a first glance comparing two different regions we can see that there are large difference in the quantity of data in, and how much data is missing from each region. Exploring this further we look at the proportion of missing data from each region, for each pollutant.
+
+```{r}
+# Count missing values in each column using sapply()
+regional_numeric <- numeric_df
+regional_numeric$who_region <- data$who_region
+afr_nas<- sapply(regional_numeric[regional_numeric$who_region=='1_Afr',], function(x) sum(is.na(x)))
+afr_nas <- (afr_nas/nrow(regional_numeric[regional_numeric$who_region=='1_Afr',]))*100
+                            
+amr_nas <- sapply(regional_numeric[regional_numeric$who_region=='2_Amr',], function(x) sum(is.na(x)))
+amr_nas <- (amr_nas/nrow(regional_numeric[regional_numeric$who_region=='2_Amr',]))*100
+
+sear_nas <- sapply(regional_numeric[regional_numeric$who_region=='3_Sear',], function(x) sum(is.na(x)))
+sear_nas <- (sear_nas/nrow(regional_numeric[regional_numeric$who_region=='3_Sear',]))*100
+
+eur_nas <- sapply(regional_numeric[regional_numeric$who_region=='4_Eur',], function(x) sum(is.na(x)))
+eur_nas <- (eur_nas/nrow(regional_numeric[regional_numeric$who_region=='4_Eur',]))*100
+
+emr_nas <- sapply(regional_numeric[regional_numeric$who_region=='5_Emr',], function(x) sum(is.na(x)))
+emr_nas <- (emr_nas/nrow(regional_numeric[regional_numeric$who_region=='5_Emr',]))*100
+
+wpr_nas <- sapply(regional_numeric[regional_numeric$who_region=='6_Wpr',], function(x) sum(is.na(x)))
+wpr_nas <- (wpr_nas/nrow(regional_numeric[regional_numeric$who_region=='6_Wpr',]))*100
+
+missing_vals <- data.frame(afr = afr_nas, amr = amr_nas, sear = sear_nas, eur = eur_nas, emr= emr_nas, wpr = wpr_nas)
+pm10 <- as.numeric(missing_vals[2,])
+pm25 <- as.numeric(missing_vals[3,])
+no2 <- as.numeric(missing_vals[4,])
+
+
+par(mfrow=c(1,3))
+#par(pin = c(2,1.5))
+barplot(height = pm10, names.arg = colnames(missing_vals), xlab = "WHO Region", ylab = "Percentage of missing data", main = "PM10 concentration missing data across regions")
+barplot(height = pm25, names.arg = colnames(missing_vals), xlab = "WHO Region", ylab = "Percentage of missing data", main = "PM25 concentration missing data across regions")
+barplot(height = no2, names.arg = colnames(missing_vals), xlab = "WHO Region", ylab = "Percentage of missing data", main = "NO2 concentration missing data across regions")
+
+```
+
+This section continues onto the Jupyter notebook file.
 
 
 
