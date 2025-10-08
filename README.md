@@ -17,12 +17,10 @@ All report content is in the directory:
   
 The report takes the following structure:
 
-- 01-Data.Rmd
-- 02-R_analysis.Rmd
-- 03-Python_Analysis.ipynb
-- 04-Wrapup.Rmd
+- 01-Report.Rmd
+- 02-Peport(Python).md
   
-With html output of the Rmd content included for convenience.
+With html output of the Rmd and md content included for convenience.
 
 ## Description
 This project explores global air quality using the WHO Ambient Air Quality Database. Using R, we cleaned and analysed the data on three different types of pollutant concentrations across countries and cities worldwide. 
