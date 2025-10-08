@@ -442,23 +442,6 @@ These estimated coefficients can be interpreted as follows:
 -   **Model fit**: The coefficient of determination is $R^2 \approx 0.239$.\
     This model explains about 24% of the variation in NO₂ concentrations — the highest explanatory power     among the three models, suggesting that NO₂ levels are more strongly linked to population size,          urbanisation, and regional context.
 
-## Conclusion 
-
-To conclude our section on linear regression, our exploratory analysis investigated how **population size**, **time**, **station type**, and **regional factors** influence air pollution levels across cities.  
-Across all three pollutants, **PM_2.5**, **PM_10**, and **NO_10**,population and urbanisation emerged as strong, statistically significant predictors of higher pollution.  
-Regional effects also proved important: while some regions (such as the Eastern Mediterranean) experienced higher pollution, others (like Europe and the Western Pacific) recorded significantly lower levels.  
-
-However, across the three final models for **PM_2.5**, **PM_10**, and **NO_10**, the value $R^2$ did not exceed 0.239, indicating that while these investigated predictors do explain a part of variation in pollution levels, a very large proportion still remains unexplained. 
-
-To amend this and further our analysis, we would need to consider additional explanatory variables. 
-These could include: 
-
-1. Whether conditions - temperature, wind speed, humidity. 
-2. Industrial emissions. 
-3. Traffic density. 
-
-Similarly, we could consider exploring non-linear relationships. This could include squared or log-transformed terms for population or year, as an attempt to capture diminishing or accelerating effects. 
-
 
 
 # Section: Population size 
@@ -633,11 +616,6 @@ summary(model3_log)
 ```
 
 For NO2 concentration and pm10 concentration the  R^2 is higher for the log model suggesting the log relationship is a better model, this is what we expected from looking at the two different graphs.
-
-## Conclusion
-
-In this section we have seen how the population size impacts the average concentration of each pollutant, as the population size increases the average concentration of pollutants increases. As we have such a spread in the values of the population we have transformed our data using a log transformation and this made it visually better to see the trends in the data, in addition after using the R^2 test we saw that the log model for pm25 and NO2 concentrations were better models.
-
 
 
 # Section: Time series and NA analysis
@@ -838,11 +816,6 @@ timePlot(data_openair_country,
          type = "country_name",
          main = "Time series by country No2")
 ```
-
-## Conclusion
-
-After extensive exploration of our data, we can conclude that there is a general decline in pollutant concentrations over time in most European countries (from 2015 onwards). We explored 2 different methods when creating time plots, by using ggplot and by using built in R packages. 
-The ggplots were easier to read when picking out key information such as year and specific concentration. However for exploring trends, openair was very useful as it provided a clear visual representation of all concentrations- making it easy to compare between countries and across different particle types.
 
 
 # Section: Polutant concentration and coverage 
@@ -1058,8 +1031,7 @@ ggplot(coverage_by_region, aes(x = who_region, y = n_cities, fill = coverage_cat
 ```
 
 Most high-coverage cities are in Europe, with some in Southeast Asia and North America. This means the trends from high-coverage data mainly reflect European cities and aren’t representative of global air quality. Regions like Africa and the Eastern Mediterranean have very little data, so we can’t draw any conclusions there.
-## Conclusion 
-Here explored global city air quality data from WHO. PM2.5 and PM10 are strongly correlated, while NO₂ shows a moderate correlation with both. Limiting data to cities with over 75% coverage doesn’t change these correlations much, but it removes outliers and reduces the dataset, making some early years, like 2010–2012, unreliable due to very few records and noticeable spikes. After 2013, pollutant levels show a steady decrease, with PM10 consistently the highest, followed by NO₂ and PM2.5. Coverage is uneven across regions and most high-coverage data comes from Europe, with some from North America, while Africa and the Eastern Mediterranean are greatly underrepresented. This means the trends mainly reflect well-covered regions like Europe, where pollution is decreasing due to legislation and other measures, but these patterns may not represent global trends.
+
 
 #Section: Analysis by Region
 
@@ -1119,6 +1091,8 @@ barplot(height = pm25, names.arg = colnames(missing_vals), xlab = "WHO Region", 
 barplot(height = no2, names.arg = colnames(missing_vals), xlab = "WHO Region", ylab = "Percentage of missing data", main = "NO2 concentration missing data across regions")
 
 ```
+These bar plots show that PM10 concentration is the most consistently recorded pollutant overall, and no single region is well recorded across all three pollutants.
+
 
 This section continues onto the Jupyter notebook file.
 

@@ -8,24 +8,33 @@ date: "2025-09-28"
 knitr::opts_chunk$set(echo = TRUE)
 
 ```
+##Analysis by Region
+This section looks explores the dataset grouped the the WHO defined 'regions' which are: 
+-Africa
+-The Americas
+-South East Asia region
+-Europe
+-East Mediterranean region
+-West Pacific region
 
+Please use the who_data.csv file in the repository for this section
 ```{r}
 library(dplyr)
 data <- data.frame(read.csv("\\Users\\ilc04\\OneDrive - University of Bristol\\DST\\who_data.csv"))
-data <- data[-c(6,14,15,17)]
+data <- data[-c(6,14,15,17)] #removing empty columns
 ```
 
 ```{r}
 summary(data)
-numeric_df <- data[sapply(data,is.numeric)]
+numeric_df <- data[sapply(data,is.numeric)]#separating numeric columns
 
 ```
 
+
+
 ```{r}
-#data$who_region <- as.factor(data$who_region)
 df_eu <- data[data$who_region=='4_Eur',]
 df_amr <- data[data$who_region=='2_Amr',]
-df_sea <- data[data$who_region=='3_Sear',]
 summary(df_amr)
 ```
 
